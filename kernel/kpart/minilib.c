@@ -313,7 +313,7 @@ void kprintf_va2buf(char *char_buffer, const char *fmt, va_list args) {
                     char_buffer[buffer_i] = s[j];
                     buffer_i++;
                 }
-            } else if (fmt[i] == 'x') {
+            } else if (fmt[i] == 'x' || fmt[i] == 'p') {
                 hex2str(va_arg(args, int), s);
                 for (int j = 0; s[j]; j++) {
                     char_buffer[buffer_i] = s[j];

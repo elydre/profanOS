@@ -1,105 +1,501 @@
-/*****************************************************************************\
-|   === rtl8168.c : 2026 ===                                                  |
-|                                                                             |
-|    RTL8168 Ethernet driver implementation as kernel module       .pi0iq.    |
-|                                                                 d"  . `'b   |
-|    This file is part of profanOS and is released under          q. /|\  "   |
-|    the terms of the GNU General Public License                   `// \\     |
-|                                                                  //   \\    |
-|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
-\*****************************************************************************/
+/**
+ * @file drivers/net/rtl8169/rtl8169.c
+ * @brief RTL1869 network card driver
+ * 
+ * 
+ * @copyright
+ * This file is part of the Hexahedron kernel, which is part of the Ethereal Operating System.
+ * It is released under the terms of the BSD 3-clause license.
+ * Please see the LICENSE file in the main repository for more details.
+ * 
+ * Copyright (C) 2025 Samuel Stuart
+ */
 
-#include <kernel/snowflake.h>
+/**
+ * @file drivers/net/rtl8169/rtl8169.h
+ * @brief RTL8169 network card driver
+ * 
+ * 
+ * @copyright
+ * This file is part of the Hexahedron kernel, which is part of the Ethereal Operating System.
+ * It is released under the terms of the BSD 3-clause license.
+ * Please see the LICENSE file in the main repository for more details.
+ * 
+ * Copyright (C) 2025 Samuel Stuart
+ */
+
+/**** INCLUDES ****/
+
 #include <modules/eth.h>
-#include <drivers/pci.h>
-#include <cpu/timer.h>
-#include <cpu/ports.h>
-#include <cpu/isr.h>
 #include <minilib.h>
-#include <ktype.h>
+#include <cpu/timer.h>
+#include <drivers/pci.h>
+#include <kernel/snowflake.h>
+#include <cpu/isr.h>
 
-#define NUM_TX_DESC  2
-#define NUM_RX_DESC  8
-#define TX_BUF_SIZE  0x600
-#define RX_BUF_SIZE  0x600
+#define LOG(A, ...) kprintf(__VA_ARGS__)
 
-#define OWN 0x80000000
-#define EOR 0x40000000
+/**** DEFINITIONS ****/
 
-struct Descriptor {
-    unsigned int command;
-    unsigned int vlan;
-    unsigned int low_buf;
-    unsigned int high_buf;
-};
+/* Registers */
+#define RTL8169_REG_IDR0            0x00
+#define RTL8169_REG_IDR1            0x01
+#define RTL8169_REG_IDR2            0x02
+#define RTL8169_REG_IDR3            0x03
+#define RTL8169_REG_IDR4            0x04
+#define RTL8169_REG_IDR5            0x05  
+#define RTL8169_REG_TNPDS           0x20            // Transmit Normal Priority Descriptors
+#define RTL8169_REG_CR              0x37            // Command register
+#define RTL8169_REG_TPPoll          0x38            // TPPoll
+#define RTL8169_REG_IMR             0x3C            // Interrupt mask register
+#define RTL8169_REG_ISR             0x3E            // Interrupt status register
+#define RTL8169_REG_TCR             0x40            // Transmit control register
+#define RTL8169_REG_RCR             0x44            // Receive control register
+#define RTL8169_REG_TCTR            0x48            // Timer count register
+#define RTL8169_REG_MPC             0x4C            // Missed packet counter (Rx FIFO)
+#define RTL8169_REG_9346CR          0x50            // 93C46 command register
+#define RTL8169_REG_PHYStatus       0x6C            // PHY (GMII, MII, or TBI) status
+#define RTL8169_REG_RMS             0xDA            // Rx packet maximum size
+#define RTL8169_REG_RDSAR           0xE4            // Receive descriptor start address
+#define RTL8169_REG_MTPS            0xEC            // Max transmit packet size register
 
-struct Descriptor *Rx_Descriptors;
-struct Descriptor *Tx_Descriptors;
-static uint8_t tx_buf_pool[NUM_TX_DESC][TX_BUF_SIZE] __attribute__((aligned(256)));
+/* CR */
+#define RTL8169_CR_TE               (1 << 2)        // Transmit enable
+#define RTL8169_CR_RE               (1 << 3)        // Receive enable
+#define RTL8169_CR_RST              (1 << 4)        // Reset
 
-unsigned long rx_pointer = 0;
-unsigned long tx_pointer = 0;
+/* TPPoll */
+#define RTL8169_TPPoll_FSWInt       (1 << 0)        // Forced software int
+#define RTL8169_TPPoll_NPQ          (1 << 6)        // Normal priority queue polling
+#define RTL8169_TPPoll_HPQ          (1 << 7)        // High priority queue polling
 
-int rtl8168_is_inited = 0;
-static uint8_t g_mac_address[6] = {0};
-pci_device_t *g_pci_device = NULL;
+/* IMR */
+#define RTL8169_IMR_ROK             (1 << 0)        // Rx OK
+#define RTL8169_IMR_RER             (1 << 1)        // Rx ERROR
+#define RTL8169_IMR_TOK             (1 << 2)        // Tx OK
+#define RTL8169_IMR_TER             (1 << 3)        // Tx ERROR
+#define RTL8169_IMR_RDU             (1 << 4)        // Rx descriptor unavailable
+#define RTL8169_IMR_LINKCHG         (1 << 5)        // Link change
+#define RTL8169_IMR_FOVW            (1 << 6)        // Rx FIFO overflow
+#define RTL8169_IMR_TDU             (1 << 7)        // Tx descriptor unavailable
+#define RTL8169_IMR_SWINT           (1 << 8)        // Software interrupt
+#define RTL8169_IMR_TIMEOUT         (1 << 14)       // Timeout interrupt
 
-static volatile uint32_t package_send_ack = 0;
+/* ISR */
+#define RTL8169_ISR_ROK             (1 << 0)        // Rx OK
+#define RTL8169_ISR_RER             (1 << 1)        // Rx ERROR
+#define RTL8169_ISR_TOK             (1 << 2)        // Tx OK
+#define RTL8169_ISR_TER             (1 << 3)        // Tx ERROR
+#define RTL8169_ISR_RDU             (1 << 4)        // Rx descriptor unavailable
+#define RTL8169_ISR_LINKCHG         (1 << 5)        // Link change
+#define RTL8169_ISR_FOVW            (1 << 6)        // Rx FIFO overflow
+#define RTL8169_ISR_TDU             (1 << 7)        // Tx descriptor unavailable
+#define RTL8169_ISR_SWINT           (1 << 8)        // Software interrupt
+#define RTL8169_ISR_TIMEOUT         (1 << 14)       // Timeout interrupt
+#define RTL8169_ISR_SERR            (1 << 15)       // System error
 
-void rtl8168_handler(registers_t *regs) {
-    (void)regs;
-    kprintf("RTL8168 IRQ\n");
-    if (!rtl8168_is_inited) return;
+/* MXDMA sizes for TCR */
+#define RTL8169_TCR_MXDMA_SHIFT     8
+#define RTL8169_TCR_MXDMA16         (0x00 << RTL8169_TCR_MXDMA_SHIFT)
+#define RTL8169_TCR_MXDMA32         (0x01 << RTL8169_TCR_MXDMA_SHIFT)
+#define RTL8169_TCR_MXDMA64         (0x02 << RTL8169_TCR_MXDMA_SHIFT)
+#define RTL8169_TCR_MXDMA128        (0x03 << RTL8169_TCR_MXDMA_SHIFT)
+#define RTL8169_TCR_MXDMA256        (0x04 << RTL8169_TCR_MXDMA_SHIFT)
+#define RTL8169_TCR_MXDMA512        (0x05 << RTL8169_TCR_MXDMA_SHIFT)
+#define RTL8169_TCR_MXDMA1024       (0x06 << RTL8169_TCR_MXDMA_SHIFT)
+#define RTL8169_TCR_MXDMA_UNLIMITED (0x07 << RTL8169_TCR_MXDMA_SHIFT)
 
-    // Acknowledge the interrupt
-    pci_write_cmd_u8(g_pci_device, 0, 0x3C, 0xFF);
+/* TCR */
+#define RTL8169_TCR_NOCRC           (1 << 16)
+#define RTL8169_TCR_LBK_MAC         (1 << 17)
 
-    // Read the status register to check for received packets
-    // and to clear the interrupt
-    unsigned short status = pci_read_cmd_u16(g_pci_device, 0, 0x3E);
-    if(status & 0x20) status |= 0x20;
-    if(status & 0x01) {
-        for(int z = 0; z < NUM_RX_DESC; z++) {
-            if (!(Rx_Descriptors[z].command & OWN)) {
-                eth_recv_packet((void *)Rx_Descriptors[z].low_buf, Rx_Descriptors[z].command & 0x3FFF);
-                Rx_Descriptors[z].command |= OWN;
-            }
-        }
-        status |= 0x01;
-    }
-    if(status & 0x04) {
-        package_send_ack = 1;
-        status |= 0x04;
-    }
-    pci_write_cmd_u16(g_pci_device, 0, 0x3E, status);
+/* MXDMA sizes for RCR */
+#define RTL8169_RCR_MXDMA_SHIFT     8
+#define RTL8169_RCR_MXDMA16         (0x00 << RTL8169_RCR_MXDMA_SHIFT)
+#define RTL8169_RCR_MXDMA32         (0x01 << RTL8169_RCR_MXDMA_SHIFT)
+#define RTL8169_RCR_MXDMA64         (0x02 << RTL8169_RCR_MXDMA_SHIFT)
+#define RTL8169_RCR_MXDMA128        (0x03 << RTL8169_RCR_MXDMA_SHIFT)
+#define RTL8169_RCR_MXDMA256        (0x04 << RTL8169_RCR_MXDMA_SHIFT)
+#define RTL8169_RCR_MXDMA512        (0x05 << RTL8169_RCR_MXDMA_SHIFT)
+#define RTL8169_RCR_MXDMA1024       (0x06 << RTL8169_RCR_MXDMA_SHIFT)
+#define RTL8169_RCR_MXDMA_UNLIMITED (0x07 << RTL8169_RCR_MXDMA_SHIFT)
+
+/* RXFTH sizes for RCR */
+#define RTL8169_RCR_RXFTH_SHIFT     13
+#define RTL8169_RCR_RXFTH64         (0x02 << RTL8169_RCR_RXFTH_SHIFT)
+#define RTL8169_RCR_RXFTH128        (0x03 << RTL8169_RCR_RXFTH_SHIFT)
+#define RTL8169_RCR_RXFTH256        (0x04 << RTL8169_RCR_RXFTH_SHIFT)
+#define RTL8169_RCR_RXFTH512        (0x05 << RTL8169_RCR_RXFTH_SHIFT)
+#define RTL8169_RCR_RXFTH1024       (0x06 << RTL8169_RCR_RXFTH_SHIFT)
+#define RTL8169_RCR_RXFTH_UNLIMITED (0x07 << RTL8169_RCR_RXFTH_SHIFT)
+
+
+/* RCR */
+#define RTL8169_RCR_AAP             (1 << 0)        // Accept all packets with destination
+#define RTL8169_RCR_APM             (1 << 1)        // Accept physical matches
+#define RTL8169_RCR_AM              (1 << 2)        // Accept multicast
+#define RTL8169_RCR_AB              (1 << 3)        // Accept broadcast
+#define RTL8169_RCR_AR              (1 << 4)        // Accept runt
+#define RTL8169_RCR_AER             (1 << 5)        // Acept error
+#define RTL8169_RCR_9356SEL         (1 << 6)        // 9346/9356 EEPROM select
+
+/* PHYStatus */
+#define RTL8169_PHYStatus_FULLDUP   (1 << 0)        // Full-Duplex status
+#define RTL8169_PHYStatus_LINKSTS   (1 << 1)        // Link Ok
+#define RTL8169_PHYStatus_10M       (1 << 2)        // 10Mbps link speed
+#define RTL8169_PHYStatus_100M      (1 << 3)        // 100Mbps link speed
+#define RTL8169_PHYStatus_1000MF    (1 << 4)        // 1000Mbps full-duplex link speed
+#define RTL8169_PHYStatus_RXFLOW    (1 << 5)        // Receive flow control
+#define RTL8169_PHYStatus_TXFLOW    (1 << 6)        // Transmit flow control
+
+/* Desc command value */
+#define RTL8169_DESC_CMD_LGSEN      (1 << 27)       // Large send
+#define RTL8169_DESC_CMD_LS         (1 << 28)       // Last segment descriptor
+#define RTL8169_DESC_CMD_FS         (1 << 29)       // First segment descriptor
+#define RTL8169_DESC_CMD_EOR        (1 << 30)       // End of descriptor
+#define RTL8169_DESC_CMD_OWN        (1 << 31)       // Ownership
+
+/* 9346 */
+#define RTL8169_9346CR_MODE_CONFIG  (0x3 << 6)
+
+/* Counts */
+#define RTL8169_RX_DESC_COUNT       256
+#define RTL8169_TX_DESC_COUNT       256
+#define RTL8169_RX_BUFFER_SIZE      8192
+#define RTL8169_TX_BUFFER_SIZE      8192
+
+
+/**** TYPES ****/
+
+typedef struct rtl8169_desc {
+    uint32_t command;           // Command
+    uint32_t vlan;              // VLAN
+    uint32_t buffer_lo;         // Low bits of buffer
+    uint32_t buffer_hi;         // High bits of buffer
+} __attribute__((packed)) rtl8169_desc_t;
+
+typedef struct rtl8169 {
+    uint32_t base;             // I/O base address
+
+    uint32_t tx_buffers;       // Tx buffer region
+    uint32_t tx_descriptors;   // Tx descriptor regions
+    uint32_t tx_current;        // Current Tx index
+
+    uint32_t rx_buffers;       // Rx buffer region
+    uint32_t rx_descriptors;   // Rx descriptor regions
+    uint32_t rx_current;        // Current Rx index
+} rtl8169_t;
+
+rtl8169_t *G_NIC = NULL;
+
+
+void outportb(unsigned short port, unsigned char data) {
+    __asm__ __volatile__("outb %b[Data], %w[Port]" :: [Port] "Nd" (port), [Data] "a" (data));
 }
 
-int rtl8168_send_packet(const void *p_data, uint16_t p_len) {
-    if (p_len > TX_BUF_SIZE) return 1;
+void outportw(unsigned short port, unsigned short data) {
+    __asm__ __volatile__("outw %w[Data], %w[Port]" :: [Port] "Nd" (port), [Data] "a" (data));
+}
 
-    volatile struct Descriptor *desz = &Tx_Descriptors[tx_pointer];
-    while (desz->command & OWN) {
-        kprintf("Waiting for TX descriptor to be free...\n");
+void outportl(unsigned short port, unsigned long data) {
+    __asm__ __volatile__("outl %k[Data], %w[Port]" :: [Port] "Nd"(port), [Data] "a" (data));
+}
+
+unsigned char inportb(unsigned short port) {
+    unsigned char returnValue;
+    __asm__ __volatile__("inb %w[Port]" : "=a"(returnValue) : [Port] "Nd" (port));
+    return returnValue;
+}
+
+unsigned short inportw(unsigned short port) {
+    unsigned short returnValue;
+    __asm__ __volatile__("inw %w[Port]" : "=a"(returnValue) : [Port] "Nd" (port));
+    return returnValue;
+}
+
+unsigned long inportl(unsigned short port) {
+    unsigned long returnValue;
+    __asm__ __volatile__("inl %w[Port]" : "=a"(returnValue) : [Port] "Nd" (port));
+    return returnValue;
+}
+
+/* Macros */
+#define RTL8169_WRITE8(reg, value) outportb(nic->base + reg, (value))
+#define RTL8169_WRITE16(reg, value) outportw(nic->base + reg, (value))
+#define RTL8169_WRITE32(reg, value) outportl(nic->base + reg, (value))
+#define RTL8169_READ8(reg) (inportb(nic->base + reg))
+#define RTL8169_READ16(reg) (inportw(nic->base + reg))
+#define RTL8169_READ32(reg) (inportl(nic->base + reg))
+
+/**
+ * @brief Reset an RTL8169 NIC
+ * @param nic The NIC to reset
+ * @returns 0 on success, 1 on failure
+ */
+int rtl8169_reset(rtl8169_t *nic) {
+    RTL8169_WRITE8(RTL8169_REG_CR, RTL8169_CR_RST);
+
+    // Timeout
+    uint32_t debut = timer_get_ms();
+    while (RTL8169_READ8(RTL8169_REG_CR) & RTL8169_CR_RST) {
+        if (timer_get_ms() - debut > 1000) {
+            LOG("ERR", "Resetting the RTL8169 NIC failed due to timeout\n");
+            return 1;
+        }
     }
 
-    mem_copy(&tx_buf_pool[tx_pointer][0], (void *)p_data, p_len);
-
-    desz->low_buf = (uint32_t)&tx_buf_pool[tx_pointer][0];
-    desz->high_buf = 0;
-    desz->vlan = 0;
-    desz->command = OWN | ((tx_pointer == NUM_TX_DESC - 1) ? EOR : 0) |
-                    0x40000 | 0x20000000 | 0x10000000 | (p_len & 0x3FFF);
-
-    package_send_ack = 0;
-    pci_write_cmd_u8(g_pci_device, 0, 0x38, 0x40);
-
-    while (1) {
-        if (package_send_ack == 1) break;
-        if ((pci_read_cmd_u8(g_pci_device, 0, 0x38) & 0x40) == 0) break;
-    }
-    package_send_ack = 0;
-    tx_pointer = (tx_pointer + 1) % NUM_TX_DESC;
+    LOG("INFO", "RTL8169 reset successfully\n");
     return 0;
+}
+
+/**
+ * @brief Read the MAC address of the NIC
+ * @param nic The NIC to read the MAC address of
+ * @param mac Destination MAC
+ */
+int rtl8169_readMAC(rtl8169_t *nic, uint8_t *mac) {
+    for (int i = 0; i < 6; i++) mac[i] = RTL8169_READ8(RTL8169_REG_IDR0 + i);
+    return 0;
+}
+
+/**
+ * @brief Initialize Rx registers for a NIC
+ * @param nic The NIC to initialize Rx registers for
+ * @returns 0 on success
+ */
+int rtl8169_initializeRx(rtl8169_t *nic) {
+    // Create regions
+    nic->rx_buffers = (uint32_t) mem_alloc(RTL8169_RX_DESC_COUNT * RTL8169_RX_BUFFER_SIZE, 1, 0x1000);
+    nic->rx_descriptors = (uint32_t) mem_alloc(RTL8169_RX_DESC_COUNT * sizeof(rtl8169_desc_t), 1, 0x1000);
+
+    LOG("DEBUG", "Rx buffers allocated to %p, descriptors allocated to %p\n", nic->rx_buffers, nic->rx_descriptors);
+
+    // Start building each descriptor
+    for (int i = 0; i < RTL8169_RX_DESC_COUNT; i++) {
+        rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->rx_descriptors + (i * sizeof(rtl8169_desc_t)));
+
+        desc->command = 0x1FF8 | RTL8169_DESC_CMD_OWN;
+        if (i == RTL8169_RX_DESC_COUNT-1) desc->command |= RTL8169_DESC_CMD_EOR;
+
+        // Get buffer
+        uint32_t buffer = nic->rx_buffers + (i * RTL8169_RX_BUFFER_SIZE);
+
+        // Setup remaining parameters
+        desc->vlan = 0x00000000;
+        desc->buffer_lo = (buffer & 0xFFFFFFFF);
+        desc->buffer_hi = 0;
+    }
+
+    // Configure Rx descriptor addresses
+    uint32_t desc_phys = nic->rx_descriptors;
+    RTL8169_WRITE32(RTL8169_REG_RDSAR, desc_phys & 0xFFFFFFFF);
+    RTL8169_WRITE32(RTL8169_REG_RDSAR + 4, 0);
+
+    // Enable 1024-byte MXDMA, unlimited RXFTH, accept physica lmatch, broadcast, multicast
+    RTL8169_WRITE32(RTL8169_REG_RCR, RTL8169_RCR_MXDMA1024 | RTL8169_RCR_RXFTH_UNLIMITED | RTL8169_RCR_AB | RTL8169_RCR_AM | RTL8169_RCR_APM);
+
+    // Configure MPS
+    RTL8169_WRITE16(RTL8169_REG_RMS, 0x1FFF);
+
+    // Initialized OK
+    return 0;
+}
+
+/**
+ * @brief Initialize Tx descriptors for a NIC
+ * @param nic The NIC to initialize Tx registers for
+ * @returns 0 on success
+ */
+int rtl8169_initializeTx(rtl8169_t *nic) {    
+    // Create regions
+    nic->tx_buffers = (uint32_t) mem_alloc(RTL8169_TX_DESC_COUNT * RTL8169_TX_BUFFER_SIZE, 1, 0x1000);
+    nic->tx_descriptors = (uint32_t) mem_alloc(RTL8169_TX_DESC_COUNT * sizeof(rtl8169_desc_t), 1, 0x1000);
+
+    LOG("DEBUG", "Tx buffers allocated to %p, descriptors allocated to %p\n", nic->tx_buffers, nic->tx_descriptors);
+
+    // Start building each descriptor
+    for (int i = 0; i < RTL8169_TX_DESC_COUNT; i++) {
+        rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->tx_descriptors + (i * sizeof(rtl8169_desc_t)));
+
+        // Get buffer
+        uint32_t buffer = nic->tx_buffers + (i * RTL8169_TX_BUFFER_SIZE);
+
+        // Setup parameters
+        desc->command = (i == RTL8169_TX_DESC_COUNT-1) ? RTL8169_DESC_CMD_EOR : 0;
+        desc->vlan = 0x00000000;
+        desc->buffer_lo = (buffer & 0xFFFFFFFF);
+        desc->buffer_hi = 0;
+    }
+
+    // Configure Tx descriptor addresses
+    uint32_t desc_phys = nic->tx_descriptors;
+    RTL8169_WRITE32(RTL8169_REG_TNPDS, desc_phys & 0xFFFFFFFF);
+    RTL8169_WRITE32(RTL8169_REG_TNPDS + 4, 0);
+
+    // I ain't care enough to write the defines for this, enables standard IFG and 1024-byte DMA
+    RTL8169_WRITE32(RTL8169_REG_TCR, (0x3 << 24) | (0x6 << 8));
+
+    // Configure MPS
+    RTL8169_WRITE16(RTL8169_REG_MTPS, 0x3B);
+
+    return 0;
+}
+
+/**
+ * @brief RTL8169 receive thread
+ * @param context NIC
+ */
+
+/*
+void rtl8169_thread(void *context) {
+    rtl8169_t *nic = (rtl8169_t*)context;
+    
+    for (;;) {
+        // Sleep until forever
+        sleep_prepare();
+        int w = sleep_enter();
+
+        if (w == WAKEUP_SIGNAL) {
+            // Aw HELL nah
+            continue;
+        }
+
+        // Loop
+        for (;;) {
+            // Get descriptor
+            rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->rx_descriptors + (nic->rx_current * sizeof(rtl8169_desc_t)));
+            
+            // Only descriptors no longer owned are valid
+            if (desc->command & RTL8169_DESC_CMD_OWN) break;
+        
+            // Figure out packet length
+            uint16_t pkt_length = desc->command & 0x3FFF;
+
+            // Error?
+            if (desc->command & (1 << 21)) {
+                LOG("ERR", "Error in Rx descriptor\n");
+                goto _next_desc;
+            }
+
+            // Update NIC statistics
+            // nic->n->stats.rx_bytes += pkt_length; PROFANOS
+            // nic->n->stats.rx_packets++;
+
+            // Pass it on to the Ethernet handler
+            ethernet_handle((ethernet_packet_t*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), nic->n, pkt_length);
+
+        _next_desc:
+            nic->rx_current = (nic->rx_current + 1) % RTL8169_RX_DESC_COUNT;
+            desc->command |= RTL8169_DESC_CMD_OWN;
+        }
+    }
+}
+*/
+
+/**
+ * @brief RTL8169 IRQ handler
+ * @param context NIC
+ */
+void rtl8169_irq(registers_t *regs) {
+    (void)regs;
+    rtl8169_t *nic = G_NIC;
+
+    if (nic) {
+        LOG("DEBUG", "Got IRQ on RTL8169\n");
+
+        // Why were we interrupted?
+        uint16_t isr = RTL8169_READ16(RTL8169_REG_ISR);
+        RTL8169_WRITE16(RTL8169_REG_ISR, isr);
+
+        if (isr & RTL8169_ISR_LINKCHG) {// Update link status
+            if (RTL8169_READ8(RTL8169_REG_PHYStatus) & RTL8169_PHYStatus_LINKSTS) {
+                kprintf("Link is now UP\n");
+            } else {
+                kprintf("Link is now DOWN\n");
+            }
+        }
+
+        // Check for errors
+        if (isr & RTL8169_ISR_RER) {
+            kprintf("Error in received packet\n");
+        }
+
+        if (isr & RTL8169_ISR_TER) {
+            kprintf("Error in transmitted packet\n");
+        }
+
+        if (isr & RTL8169_ISR_TOK /*&& nic->thr*/) {
+            // sleep_wakeup(nic->thr);
+            kprintf("DEBUG: WAWWWWW Waking up transmit thread\n");
+        }  
+
+        // Did we get a packet?
+        if (isr & RTL8169_ISR_ROK) {
+            // Wake the thread up
+            kprintf("DEBUG: WAWWWWW Waking up receive thread\n");
+            // sleep_wakeup(nic->recv_proc->main_thread);
+        }
+    }
+}
+
+/**
+ * @brief Get link speed as string
+ * @param nic The NIC to get the link speed for
+ */
+char *rtl8169_link(rtl8169_t *nic) {
+    if (!(RTL8169_READ8(RTL8169_REG_PHYStatus) & RTL8169_PHYStatus_LINKSTS)) {
+        return "DOWN";
+    }
+
+    if (RTL8169_READ8(RTL8169_REG_PHYStatus) & RTL8169_PHYStatus_1000MF) {
+        return "1000Mbps";
+    } else if (RTL8169_READ8(RTL8169_REG_PHYStatus) & RTL8169_PHYStatus_100M) {
+        return "100Mbps";
+    } else if (RTL8169_READ8(RTL8169_REG_PHYStatus) & RTL8169_PHYStatus_10M) {
+        return "10Mbps";
+    } else {
+        return "???";
+    }
+} 
+
+/**
+ * @brief Send a packet from an RTL8169 NIC
+ * @param node Node
+ * @param off Offset
+ * @param size Size
+ * @param buffer Buffer 
+ */
+int rtl8169_send(const void *buffer, uint16_t size) {
+    if (!size) return 0;
+    rtl8169_t *nic = G_NIC;
+
+    // Get current descriptor
+    rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->tx_descriptors + (nic->tx_current * sizeof(rtl8169_desc_t)));
+
+    // Is the descriptor busy?
+    if (desc->command & RTL8169_DESC_CMD_OWN) {
+        LOG("ERR", "No free Tx descriptors available, cannot send packet\n");
+        return 1;
+    }
+
+    // The descriptor is ready, let's go
+    uint32_t tx_buffer = nic->tx_buffers +  (nic->tx_current * RTL8169_TX_BUFFER_SIZE);
+    mem_copy((void*)tx_buffer, buffer, size);
+
+    // Give ownership
+    desc->command = size | RTL8169_DESC_CMD_OWN | RTL8169_DESC_CMD_LS | RTL8169_DESC_CMD_FS;
+
+    // Advance tx_current
+    nic->tx_current = (nic->tx_current + 1) % RTL8169_TX_DESC_COUNT;
+    if (nic->tx_current >= RTL8169_TX_DESC_COUNT-1) desc->command |= RTL8169_DESC_CMD_EOR;
+
+    // Inform NIC gracefully
+    RTL8169_WRITE8(RTL8169_REG_TPPoll, RTL8169_TPPoll_NPQ);
+
+    // nnic->stats.tx_bytes += size;
+    // nnic->stats.tx_packets++;
+
+    return size;
 }
 
 pci_findme_t this_eth_ids[] = {
@@ -111,87 +507,82 @@ pci_findme_t this_eth_ids[] = {
     {0x16ec, 0x0116},
 };
 
-#include <kernel/process.h>
-
+/**
+ * @brief Initialize a RTL8169 NIC
+ * @param device The PCI device
+ */
 int __init(void) {
-    pci_device_t *pci = pci_find_array(this_eth_ids, sizeof(this_eth_ids) / sizeof(pci_findme_t));
+    pci_device_t *device = pci_find_array(this_eth_ids, sizeof(this_eth_ids) / sizeof(pci_findme_t));
 
-    if (pci == NULL)
+    if (device == NULL)
         return 2;
 
-    kprintf("RTL8168 found at bus %d, slot %d, function %d\n", pci->bus, pci->slot, pci->function);
+    LOG("DEBUG", "Initializing a RTL8169 NIC (bus %d slot %d func %d)\n", device->bus, device->slot, device->function);
+    
+    // Get BAR
+    uint32_t bar = device->bar[0];
 
-    pci_enable_bus_master(pci);
-    g_pci_device = pci;
+    // Create RTL8169 NIC object
+    rtl8169_t *nic = calloc(sizeof(rtl8169_t));
+    G_NIC = nic;
+    nic->base = bar & 0xFFFFFFF0;
 
-    // Activation MSI
-    g_pci_device->interrupt_line = pci_try_enable_msi(pci);
-    kprintf("RTL8168 MSI interrupt line: %d\n", g_pci_device->interrupt_line);
-
-    if (g_pci_device->interrupt_line == 0) {
-        kprintf("Failed to enable MSI for RTL8168\n");
-        return 2;
-    }
-    interrupt_register_handler(g_pci_device->interrupt_line, rtl8168_handler);
-
-    // Reset matériel de la carte
-    pci_write_cmd_u8(pci, 0, 0x52, 0x0);  // Clear some control register (OK)
-    pci_write_cmd_u8(pci, 0, 0x37, 0x10); // Software reset bit = 1
-
-    uint32_t start_time = timer_get_ms();
-    while (timer_get_ms() - start_time < 500) {
-        // Attendre que le reset soit fini (bit 4 à 0)
-        if ((pci_read_cmd_u8(pci, 0, 0x37) & 0x10) == 0) break;
+    // Reset the NIC
+    if (rtl8169_reset(nic)) {
+        LOG("ERR", "Error while initializing RTL8169\n");
+        free(nic);
+        return 1;
     }
 
-    // Lecture adresse MAC
-    for (int i = 0; i < 6; i++)
-        g_mac_address[i] = pci_read_cmd_u8(pci, 0, i);
-
-    // Allocation des buffers pour RX et TX
-    Rx_Descriptors = mem_alloc(sizeof(struct Descriptor) * NUM_RX_DESC, 1, 0xFFFF);
-    Tx_Descriptors = mem_alloc(sizeof(struct Descriptor) * NUM_TX_DESC, 1, 0xFFFF);
-    mem_set(Rx_Descriptors, 0, sizeof(struct Descriptor) * NUM_RX_DESC);
-    mem_set(Tx_Descriptors, 0, sizeof(struct Descriptor) * NUM_TX_DESC);
-
-    for (unsigned long i = 0; i < NUM_RX_DESC; i++) {
-        unsigned long rx_buffer_len = RX_BUF_SIZE;
-        unsigned long packet_buffer_address = (unsigned long) mem_alloc(rx_buffer_len, 1, 0xFFFF);
-        Rx_Descriptors[i].command = OWN | ((i == (NUM_RX_DESC - 1)) ? EOR : 0) | (rx_buffer_len & 0x3FFF);
-        Rx_Descriptors[i].low_buf = (uint32_t)packet_buffer_address;
-        Rx_Descriptors[i].high_buf = 0;
+    // Get the MAC address of the NIC
+    uint8_t mac[6];
+    if (rtl8169_readMAC(nic, mac)) {
+        LOG("ERR", "Error while initializing RTL8169\n");
+        free(nic);
+        return 1;
     }
 
-    // Tx descriptors
-    Tx_Descriptors[NUM_TX_DESC - 1].command |= EOR;
+    LOG("DEBUG", "MAC: %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    
+    // Register IRQ handler
+    uint32_t irq = pci_try_enable_msi(device);
+    if (irq == 0) {
+        LOG("ERR", "Failed to enable MSI for RTL8169\n");
+        return 1;
+    }
+    
+    interrupt_register_handler(irq, rtl8169_irq);
 
-    // Config registre 0x50 : Activer Rx & Tx (bits 6 et 7)
-    pci_write_cmd_u8(pci, 0, 0x50, 0xC0);
+    LOG("DEBUG", "Registered IRQ%d for NIC\n", irq);
 
-    // Config filtre Rx, autres paramètres spécifiques à ta carte
-    pci_write_cmd_u32(pci, 0, 0x44, 0x0000E70F);
-    pci_write_cmd_u8(pci, 0, 0x37, 0x0C); // Activer Rx & Tx (bit 3 et 2)
+    // Enable configuration registers
+    RTL8169_WRITE8(RTL8169_REG_9346CR, RTL8169_9346CR_MODE_CONFIG);
 
-    pci_write_cmd_u32(pci, 0, 0x40, 0x03000700);
-    pci_write_cmd_u16(pci, 0, 0xDA, 0x1FFF);
-    pci_write_cmd_u8(pci, 0, 0xEC, 0x3B);
+    // Initialize Rx
+    if (rtl8169_initializeRx(nic)) {
+        LOG("ERR", "Error while initializing RTL8169\n");
+        free(nic);
+        return 1;
+    }
 
-    // Setup adresses des descriptors Tx/Rx dans les registres PCI
-    pci_write_cmd_u32(pci, 0, 0x20, (uint32_t)&Tx_Descriptors[0]);
-    pci_write_cmd_u32(pci, 0, 0x24, 0);
-    pci_write_cmd_u32(pci, 0, 0xE4, (uint32_t)&Rx_Descriptors[0]);
-    pci_write_cmd_u32(pci, 0, 0xE8, 0);
+    // Initialize Tx
+    if (rtl8169_initializeTx(nic)) {
+        LOG("ERR", "Error while initializing RTL8169\n");
+        free(nic);
+        return 1;
+    }
 
-    // NE PAS DESACTIVER Rx/Tx à la fin !!!
-    // pci_write_cmd_u8(pci, 0, 0x50, 0x00); // <--- Supprimé
+    // Enable receive and transmit
+    RTL8169_WRITE8(RTL8169_REG_CR, RTL8169_CR_RE | RTL8169_CR_TE);
 
-    rtl8168_is_inited = 1;
+    // Enable interrupts
+    RTL8169_WRITE16(RTL8169_REG_IMR, RTL8169_IMR_ROK | RTL8169_IMR_RER | RTL8169_IMR_TOK | RTL8169_IMR_TER | RTL8169_IMR_RDU | RTL8169_IMR_LINKCHG | RTL8169_IMR_FOVW | RTL8169_IMR_TDU);
+    RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF);
 
-    kprintf("x MAC ADDR %x:%x:%x:%x:%x:%x\n",
-       g_mac_address[0], g_mac_address[1], g_mac_address[2],
-       g_mac_address[3], g_mac_address[4], g_mac_address[5]);
+    // Update link status
+    kprintf("Link status: %s\n", rtl8169_link(nic));
 
-    eth_register_nic(rtl8168_send_packet, g_mac_address);
+    eth_register_nic(rtl8169_send, mac);
 
     return 0;
 }

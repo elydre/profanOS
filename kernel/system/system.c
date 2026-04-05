@@ -101,11 +101,11 @@ void sys_entry_kernel(void) {
 
     g_last_entry = TIMER_TICKS;
 
-    // enable interrupts but with only IRQ0 (timer)
+    /* // enable interrupts but with only IRQ0 (timer)
     port_write8(0x21, 0xFE);
     port_write8(0xA1, 0xFF);
 
-    asm volatile("sti");
+    asm volatile("sti");*/
 }
 
 void sys_exit_kernel(int restore_pic) {
