@@ -18,7 +18,7 @@
 #include "arp.h"
 
 #define ETHER_IP4 0x0800
-#define ETHER_ARP 0x8006
+#define ETHER_ARP 0x0806
 
 void socket_tick(int len, uint8_t *packet) {
     for (int i = 0; i < sockets_len; i++) {
