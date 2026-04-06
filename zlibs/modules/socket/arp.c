@@ -57,7 +57,7 @@ void socket_on_recv_arp(int len, uint8_t *packet) {
 	mem_copy(arp.s_haddr, &packet[8], 6);
 	mem_copy(&arp.s_paddr, &packet[14], 4);
 	mem_copy(arp.t_haddr, &packet[18], 6);
-	mem_copy(&arp.s_paddr, &packet[24], 4);
+	mem_copy(&arp.t_paddr, &packet[24], 4);
 	
 	respond(&arp);
 }
