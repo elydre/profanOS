@@ -379,7 +379,7 @@ void rtl8169_recv(void) {
         // Pass it on to the Ethernet handler
         // ethernet_handle((ethernet_packet_t*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), nic->n, pkt_length);
 
-        kprintf("DEBUG: Received packet of length %d\n", pkt_length);
+        kprintf("Received packet of length %d\n", pkt_length);
 
         eth_recv_packet((void*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), pkt_length);
 
@@ -397,12 +397,8 @@ void rtl8169_irq(registers_t *regs) {
     (void)regs;
     rtl8169_t *nic = G_NIC;
 
-    LOG("DEBUG", "OHOHOHOHHO HOHOHOHOHOHOH Got IRQ on RTL8169\n");
-
     // Why were we interrupted?
     uint16_t isr = RTL8169_READ16(RTL8169_REG_ISR);
-
-    kprintf("ISR: %x\n", isr);
 
     if (isr == 0)
         return; // Spurious interrupt, ignore
@@ -425,13 +421,12 @@ void rtl8169_irq(registers_t *regs) {
     }
 
     if (isr & RTL8169_ISR_TOK /*&& nic->thr*/) {
-        // sleep_wakeup(nic->thr);
-        kprintf("DEBUG: WAWWWWW packet transmitted successfully\n");
+        // kprintf("DEBUG: WAWWWWW packet transmitted successfully\n");
     }  
 
     // Did we get a packet?
     if (isr & RTL8169_ISR_ROK) {
-        kprintf("DEBUG: WAWWWWW new packet received\n");
+        // kprintf("DEBUG: WAWWWWW new packet received\n");
         rtl8169_recv();
     }
 
@@ -499,11 +494,9 @@ int rtl8169_send(const void *buffer, uint16_t size) {
     nic->tx_current = (nic->tx_current + 1) % RTL8169_TX_DESC_COUNT;
 
     // Inform NIC gracefully
-    kprintf("DEBUG: before command: %x\n", desc->command);
     RTL8169_WRITE8(RTL8169_REG_TPPoll, RTL8169_TPPoll_NPQ);
 
-    for (volatile int i = 0; i < 1000000; i++);
-    kprintf("DEBUG: affter command: %x\n", desc->command);
+    kprintf("Sent packet of length %d\n", size);
 
     // nnic->stats.tx_bytes += size;
     // nnic->stats.tx_packets++;

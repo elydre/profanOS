@@ -407,25 +407,37 @@ int receive_offer(uint8_t *mac) {
         return 1;
     }
     int opt_len = packet_size - (opt - packet);
+    int is_offer = 0;
+    uint32_t router_ip_opt = 0;
+
     for (int i = 0; i < opt_len && opt[i] != 0xff; ) {
         if (opt[i] == 0) {
             i++;
             continue;
         }
         if (i + 2 < opt_len) {
-            if (opt[i] == 53 && opt[i + 1] == 1 && opt[i + 2] == 2) {
-                offered_ip = dhcp->yiaddr;
-                dhcp_server_ip = dhcp->siaddr;
-                free(packet);
-                memcpy(g_info.router_mac, eth->src_mac, 6);
-                return 0;
-            }
+            if (opt[i] == 53 && opt[i + 1] == 1 && opt[i + 2] == 2)
+                is_offer = 1;
+            if (opt[i] == 3 && i + 5 < opt_len && opt[i + 1] == 4)
+                router_ip_opt = *(uint32_t *)(&opt[i + 2]);
         }
         if (i + 1 < opt_len)
             i += opt[i + 1] + 2;
         else
             break;
     }
+
+    if (is_offer) {
+        offered_ip = dhcp->yiaddr;
+        if (router_ip_opt != 0)
+            dhcp_server_ip = router_ip_opt;
+        else
+            dhcp_server_ip = dhcp->siaddr;
+        memcpy(g_info.router_mac, eth->src_mac, 6);
+        free(packet);
+        return 0;
+    }
+
     free(packet);
     return 1;
 }
