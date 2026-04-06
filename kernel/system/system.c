@@ -114,7 +114,7 @@ void sys_exit_kernel(int restore_pic) {
     if (!IN_KERNEL)
         sys_fatal("Already in user mode");
 
-    schedule_if_needed();
+    // schedule_if_needed();
 
     IN_KERNEL = 0;
 
