@@ -133,9 +133,6 @@ void irq_handler(registers_t *r) {
 
     sys_entry_kernel();
 
-    if (r->int_no != 32 && r->int_no != 33)
-        kprintf("IRQ%d\n", r->int_no - 32);
-
     interrupt_handler_t handler = interrupt_handlers[r->int_no];
 
     if (handler != NULL)
