@@ -171,6 +171,11 @@ void *malloc(uint32_t size) {
 }
 
 void *realloc(void *ptr, uint32_t size) {
+	if (size == 0) {
+		free(ptr);
+		return NULL;
+	}
+
     void *new_addr = mem_alloc(size, SNOW_KERNEL, 0);
 
     if (new_addr == NULL)
