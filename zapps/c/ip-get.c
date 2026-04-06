@@ -455,7 +455,7 @@ int retrieve_ip(uint8_t *mac) {
 
     uint32_t now = syscall_timer_get_ms();
     int fail = 1;
-    while (syscall_timer_get_ms() - now < 2000) {
+    while (syscall_timer_get_ms() - now < 5000) {
         fail = receive_offer(mac);
         if (fail == 0)
             break;
@@ -466,7 +466,7 @@ int retrieve_ip(uint8_t *mac) {
     send_dhcp_request(mac);
     now = syscall_timer_get_ms();
     fail = 1;
-    while (syscall_timer_get_ms() - now < 2000) {
+    while (syscall_timer_get_ms() - now < 5000) {
         fail = receive_ack(mac);
         if (fail == 0)
             break;

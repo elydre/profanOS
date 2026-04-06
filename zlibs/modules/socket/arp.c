@@ -1,18 +1,18 @@
 #include "arp.h"
 #include <minilib.h>
 
-static void respond(arp_packet_t *packet) {
+static int respond(arp_packet_t *packet) {
 	if (packet->htype != 1 || packet->ptype != 0x0800)
-		return ;
+		return 1;
 	if (packet->plen != 4 || packet->hlen != 6)
-		return ;
+		return 1;
 	if (packet->op != 1)
-		return ;
+		return 1;
 
 	eth_info_t info;
 	eth_get_info(0, &info);
 	if (info.ip != packet->t_paddr)
-		return ;
+		return 1;
 	
 	uint8_t response[6 + 6 + 2 + 28];
 	mem_copy(response, packet->s_haddr, 6);
@@ -42,6 +42,8 @@ static void respond(arp_packet_t *packet) {
 	mem_copy(&arp[18], packet->s_haddr, 6);
 	mem_copy(&arp[24], &packet->s_paddr, 4);
 	eth_send(response, 6 + 6 + 2 + 28);
+
+    return 0;
 }
 
 void socket_on_recv_arp(int len, uint8_t *packet) {
@@ -54,10 +56,11 @@ void socket_on_recv_arp(int len, uint8_t *packet) {
 	arp.hlen = packet[4];
 	arp.plen = packet[5];
 	arp.op = (((uint16_t)packet[6]) << 8) | (packet[7]);
+
 	mem_copy(arp.s_haddr, &packet[8], 6);
 	mem_copy(&arp.s_paddr, &packet[14], 4);
 	mem_copy(arp.t_haddr, &packet[18], 6);
-	mem_copy(&arp.s_paddr, &packet[24], 4);
-	
+	mem_copy(&arp.t_paddr, &packet[24], 4);
+
 	respond(&arp);
 }

@@ -379,7 +379,7 @@ void rtl8169_recv(void) {
         // Pass it on to the Ethernet handler
         // ethernet_handle((ethernet_packet_t*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), nic->n, pkt_length);
 
-        kprintf("Received packet of length %d\n", pkt_length);
+        // kprintf("Received packet of length %d\n", pkt_length);
 
         eth_recv_packet((void*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), pkt_length);
 
@@ -496,7 +496,7 @@ int rtl8169_send(const void *buffer, uint16_t size) {
     // Inform NIC gracefully
     RTL8169_WRITE8(RTL8169_REG_TPPoll, RTL8169_TPPoll_NPQ);
 
-    kprintf("Sent packet of length %d\n", size);
+    // kprintf("Sent packet of length %d\n", size);
 
     // nnic->stats.tx_bytes += size;
     // nnic->stats.tx_packets++;
