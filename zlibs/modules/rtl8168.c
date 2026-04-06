@@ -276,7 +276,8 @@ int rtl8169_initializeRx(rtl8169_t *nic) {
         rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->rx_descriptors + (i * sizeof(rtl8169_desc_t)));
 
         desc->command = RTL8169_RX_BUFFER_SIZE | RTL8169_DESC_CMD_OWN;
-        if (i == RTL8169_RX_DESC_COUNT-1) desc->command |= RTL8169_DESC_CMD_EOR;
+        if (i == RTL8169_RX_DESC_COUNT - 1)
+            desc->command |= RTL8169_DESC_CMD_EOR;
 
         // Get buffer
         uint32_t buffer = nic->rx_buffers + (i * RTL8169_RX_BUFFER_SIZE);
@@ -324,7 +325,7 @@ int rtl8169_initializeTx(rtl8169_t *nic) {
         uint32_t buffer = nic->tx_buffers + (i * RTL8169_TX_BUFFER_SIZE);
 
         // Setup parameters
-        desc->command = (i == RTL8169_TX_DESC_COUNT-1) ? RTL8169_DESC_CMD_EOR : 0;
+        desc->command = (i == RTL8169_TX_DESC_COUNT - 1) ? RTL8169_DESC_CMD_EOR : 0;
         desc->vlan = 0x00000000;
         desc->buffer_lo = buffer;
         desc->buffer_hi = 0;
@@ -354,7 +355,7 @@ int rtl8169_initializeTx(rtl8169_t *nic) {
 void rtl8169_recv(void) {
     rtl8169_t *nic = G_NIC;
     
-    for (;;) {
+    while (1) {
         // Get descriptor
         rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->rx_descriptors + (nic->rx_current * sizeof(rtl8169_desc_t)));
         
@@ -377,6 +378,9 @@ void rtl8169_recv(void) {
 
         // Pass it on to the Ethernet handler
         // ethernet_handle((ethernet_packet_t*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), nic->n, pkt_length);
+
+        kprintf("DEBUG: Received packet of length %d\n", pkt_length);
+
         eth_recv_packet((void*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), pkt_length);
 
     _next_desc:
@@ -398,7 +402,10 @@ void rtl8169_irq(registers_t *regs) {
     // Why were we interrupted?
     uint16_t isr = RTL8169_READ16(RTL8169_REG_ISR);
 
-    kprintf("ISR: %x\n", isr); // j'ai 0 ici
+    kprintf("ISR: %x\n", isr);
+
+    if (isr == 0)
+        return; // Spurious interrupt, ignore
 
     if (isr & RTL8169_ISR_LINKCHG) {// Update link status
         if (RTL8169_READ8(RTL8169_REG_PHYStatus) & RTL8169_PHYStatus_LINKSTS) {
@@ -428,7 +435,8 @@ void rtl8169_irq(registers_t *regs) {
         rtl8169_recv();
     }
 
-    RTL8169_WRITE16(RTL8169_REG_ISR, isr);
+    RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF);
+    pci_msi_eoi();
 }
 
 /**
@@ -459,7 +467,9 @@ char *rtl8169_link(rtl8169_t *nic) {
  * @param buffer Buffer 
  */
 int rtl8169_send(const void *buffer, uint16_t size) {
-    if (!size) return 0;
+    if (!size)
+        return 0;
+
     rtl8169_t *nic = G_NIC;
 
     // Get current descriptor
@@ -471,19 +481,29 @@ int rtl8169_send(const void *buffer, uint16_t size) {
         return 1;
     }
 
+    if (desc->buffer_lo != (nic->tx_buffers + (nic->tx_current * RTL8169_TX_BUFFER_SIZE))) {
+        LOG("ERR", "Tx descriptor buffer address mismatch, cannot send packet\n");
+        return 1;
+    }
+
     // The descriptor is ready, let's go
-    uint32_t tx_buffer = nic->tx_buffers +  (nic->tx_current * RTL8169_TX_BUFFER_SIZE);
-    mem_copy((void*)tx_buffer, buffer, size);
+    mem_copy((void *) desc->buffer_lo, buffer, size);
+
+    int was_eor = desc->command & RTL8169_DESC_CMD_EOR;
 
     // Give ownership
-    desc->command = size | RTL8169_DESC_CMD_OWN | RTL8169_DESC_CMD_LS | RTL8169_DESC_CMD_FS;
+    desc->command = size | RTL8169_DESC_CMD_OWN | RTL8169_DESC_CMD_LS | RTL8169_DESC_CMD_FS | (was_eor ? RTL8169_DESC_CMD_EOR : 0);
+    desc->vlan = 0;
 
     // Advance tx_current
     nic->tx_current = (nic->tx_current + 1) % RTL8169_TX_DESC_COUNT;
-    if (nic->tx_current >= RTL8169_TX_DESC_COUNT-1) desc->command |= RTL8169_DESC_CMD_EOR;
 
     // Inform NIC gracefully
+    kprintf("DEBUG: before command: %x\n", desc->command);
     RTL8169_WRITE8(RTL8169_REG_TPPoll, RTL8169_TPPoll_NPQ);
+
+    for (volatile int i = 0; i < 1000000; i++);
+    kprintf("DEBUG: affter command: %x\n", desc->command);
 
     // nnic->stats.tx_bytes += size;
     // nnic->stats.tx_packets++;
@@ -510,7 +530,12 @@ int __init(void) {
     if (device == NULL)
         return 2;
 
-    LOG("DEBUG", "Initializing a RTL8169 NIC (bus %d slot %d func %d)\n", device->bus, device->slot, device->function);
+    if (sizeof(rtl8169_desc_t) != 16) {
+        LOG("ERR", "rtl8169_desc_t is not 16 bytes, cannot continue\n");
+        return 1;
+    }
+
+    LOG("DEBUG", "A Initializing a RTL8169 NIC (bus %d slot %d func %d)\n", device->bus, device->slot, device->function);
     
     // Get BAR
     uint32_t bar = device->bar[0];
@@ -577,11 +602,12 @@ int __init(void) {
     RTL8169_WRITE8(RTL8169_REG_CR, RTL8169_CR_RE | RTL8169_CR_TE);
 
     RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF); // this is what sends me the ISR with 0
+    RTL8169_WRITE16(RTL8169_REG_IMR, 0xFFFF);
 
     // Enable interrupts
-    RTL8169_WRITE16(RTL8169_REG_IMR, RTL8169_IMR_ROK | RTL8169_IMR_RER | 
+    /* RTL8169_WRITE16(RTL8169_REG_IMR, RTL8169_IMR_ROK | RTL8169_IMR_RER | 
                 RTL8169_IMR_TOK | RTL8169_IMR_TER | RTL8169_IMR_RDU |
-                RTL8169_IMR_LINKCHG | RTL8169_IMR_FOVW | RTL8169_IMR_TDU);
+                RTL8169_IMR_LINKCHG | RTL8169_IMR_FOVW | RTL8169_IMR_TDU); */
 
     // Update link status
     kprintf("Link status: %s\n", rtl8169_link(nic));

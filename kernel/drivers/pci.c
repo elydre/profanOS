@@ -318,3 +318,8 @@ uint32_t pci_try_enable_msi(pci_device_t *pci) {
     return next_int_no++;
 }
 
+void pci_msi_eoi(void) {
+    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
+    volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
+    lapic[0xB0 / 4] = 0; // Write to EOI register
+}
