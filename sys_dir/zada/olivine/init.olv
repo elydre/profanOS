@@ -70,3 +70,14 @@ FUNC time
 
     print '!0 took !(eval !(ticks) - !debut) ms\n'
 END
+
+FUNC stp
+    set args ''
+    FOR i !(range !#)
+        set args '!args !!i'
+    END
+
+    . /bin/f/stp.elf !args
+
+    debug rbin
+END
