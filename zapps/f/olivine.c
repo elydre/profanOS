@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OLV_VERSION "1.9.7"
+#define OLV_VERSION "1.9.8"
 
 #define BUILD_TARGET  0     // 0 auto - 1 minimal - 2 unix
 
@@ -2016,7 +2016,7 @@ char *if_fstat(char **input) {
     int exists = 1;
 
     if (opt != 'h' && stat(path, &st) == -1) {
-        if (opt != 'd' && opt != 'f') {
+        if (opt != 'd' && opt != 'f' && opt != 'e') {
             raise_error("fstat", "File '%s' does not exist", path);
             return ERROR_CODE;
         }
@@ -2027,13 +2027,13 @@ char *if_fstat(char **input) {
         case 'h':
             puts("Usage: fstat [option] <file>\n"
                 "Options:\n"
-                "  -d   check if path is a directory\n"
                 "  -e   check if path exists\n"
-                "  -h   display this help\n"
+                "  -d   check if path is a directory\n"
                 "  -f   check if path is a file\n"
                 "  -m   last modification time\n"
                 "  -p   3 digits permission\n"
                 "  -s   size of the file in bytes"
+                "  -h   display this help\n"
             );
             break;
         case 'e':
