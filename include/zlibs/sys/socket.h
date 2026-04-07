@@ -31,6 +31,7 @@
 #define IPPROTO_UDP     17
 
 #define MSG_PEEK (1 << 0)
+#define MSG_DONTWAIT (1 << 1)
 
 typedef uint32_t socklen_t;
 typedef uint16_t sa_family_t;
