@@ -1005,6 +1005,127 @@ static void print_download_stats(void) {
         (1024 * 1024) / (g_alltime_dl_stat.total_ms / 1000.0));
 }
 
+static int cmd_remove_remove(const char *name) {
+    printf("removing %s\n", name);
+    #ifdef __profanOS__
+    char remove_script[PATH_MAX];
+    snprintf(remove_script, sizeof(remove_script), PATH_STP "/" PKG_RMDIR "/%s.olv", name);
+
+    if (access(remove_script, F_OK) != 0) {
+        fprintf(stderr, "stp: No remove script found for package '%s'\n", name);
+        return 1;
+    }
+
+    runtime_args_t args = {
+        PATH_OLIVINE,
+        profan_wd_path(),
+        2,
+        (char *[]) {
+            PATH_OLIVINE,
+            remove_script,
+            NULL
+        },
+        environ,
+        1 // sleep mode
+    };
+
+    if (run_ifexist(&args, NULL)) {
+        fprintf(stderr, "stp: Failed to run remove script for package '%s'\n", name);
+        return 1;
+    }
+
+    // remove the script after successful execution
+    if (remove(remove_script) != 0) {
+        fprintf(stderr, "stp: Failed to remove %s\n", remove_script);
+        return 1;
+    }
+    #endif
+
+    return 0;
+}
+
+static int cmd_auto_remove(void) {
+    if (!G_LPL)
+        lpl_load();
+
+    int found = 0;
+
+    for (int i = 0; G_LPL[i]; i++) {
+        if (G_LPL[i]->is_a_dep && lpl_get_dependent(G_LPL[i]->name) == NULL) {
+            found = 1;
+            if (cmd_remove_remove(G_LPL[i]->name))
+                return -1;
+            if (lpl_remove(G_LPL[i]->name) == 0)
+                continue;
+            // should not happen
+            fprintf(stderr, "stp: Package '%s' not found in local package list\n", G_LPL[i]->name);
+            return -1;
+        }
+    }
+
+    if (found)
+        found += cmd_auto_remove();
+
+    return found;
+}
+
+int cmd_remove(char **names) {
+    const char *dependent;
+    int success = 0;
+
+    #ifdef __profanOS__
+    check_command_exists(PATH_OLIVINE);
+    #endif
+
+    for (int i = 0; names[i]; i++) {
+        int is_installed = lpl_is_installed(names[i]);
+
+        if (is_installed == 0)
+            fprintf(stderr, "stp: Package '%s' not installed\n", names[i]);
+        else if ((dependent = lpl_get_dependent(names[i])) != NULL)
+            if (is_installed == 1) {
+                printf("package '%s' requires by '%s' is now marked only as a dependency\n", names[i], dependent);
+                lpl_update_depflag(names[i], 1);
+                continue;
+            }
+            else
+                fprintf(stderr, "stp: Failed to remove '%s' because '%s' uses it\n", names[i], dependent);
+        else if (cmd_remove_remove(names[i]))
+            ; // error already printed
+        else if (lpl_remove(names[i]))
+            fprintf(stderr, "stp: Failed to remove '%s' from local package list\n", names[i]);
+        else {
+            if (success != -1)
+                success++;
+            continue;
+        };
+        success = -1;
+    }
+
+    if (success < 0)
+        return 1;
+
+    int auto_removed = cmd_auto_remove();
+    if (auto_removed == -1) {
+        fprintf(stderr, "stp: Failed to remove unused dependencies\n");
+        return 1;
+    }
+
+    if (success == 0) {
+        if (auto_removed == 0)
+            printf("no unused dependencies found\n");
+        else
+            printf("successfully removed %d unused dependencies\n", auto_removed);
+    } else {
+        if (auto_removed == 0)
+            printf("successfully removed %d packages, no unused dependencies found\n", success);
+        else
+            printf("successfully removed %d packages and %d unused dependencies\n", success, auto_removed);
+    }
+
+    return 0;
+}
+
 #ifdef __profanOS__
 static int download_unzip_command(void) {
     if (access(PATH_UNZIP, X_OK) == 0)
@@ -1234,145 +1355,41 @@ int cmd_install(char **names) {
         }
     }
 
-    if (ret == 0) {
-        count = 0;
-        while (dl_deps[count].id != -1)
-            count++;
+    if (ret == 1)
+        goto end;
+
+    count = 0;
+    while (dl_deps[count].id != -1)
+        count++;
+
+    if (count == 0)
+        goto end;
+
+    print_download_stats();
+
+    for (int i = count - 1; i >= 0; i--) {
+        if (cmd_install_install(dl_deps[i].name) == 0)
+            continue;
+
+        printf("Installation failed, cleaning up...\n");
+        lpl_remove(dl_deps[i].name);
+
+        for (int j = count - 1; j > i; j--) {
+            cmd_remove_remove(dl_deps[j].name);
+            lpl_remove(dl_deps[j].name);
+        }
+
+        ret = 1;
+        break;
     }
 
-    if (ret == 0 && count > 0) {
-        print_download_stats();
-
-        for (int i = count - 1; i >= 0; i--)
-            ret |= cmd_install_install(dl_deps[i].name);
-    }
+    end:
 
     remove_full_dir(PATH_TEMP);
     free(dl_deps);
     free(ids);
 
     return ret;
-}
-
-static int cmd_remove_remove(const char *name) {
-    printf("removing %s\n", name);
-    #ifdef __profanOS__
-    char remove_script[PATH_MAX];
-    snprintf(remove_script, sizeof(remove_script), PATH_STP "/" PKG_RMDIR "/%s.olv", name);
-
-    if (access(remove_script, F_OK) != 0) {
-        fprintf(stderr, "stp: No remove script found for package '%s'\n", name);
-        return 1;
-    }
-
-    runtime_args_t args = {
-        PATH_OLIVINE,
-        profan_wd_path(),
-        2,
-        (char *[]) {
-            PATH_OLIVINE,
-            remove_script,
-            NULL
-        },
-        environ,
-        1 // sleep mode
-    };
-
-    if (run_ifexist(&args, NULL)) {
-        fprintf(stderr, "stp: Failed to run remove script for package '%s'\n", name);
-        return 1;
-    }
-
-    // remove the script after successful execution
-    if (remove(remove_script) != 0) {
-        fprintf(stderr, "stp: Failed to remove %s\n", remove_script);
-        return 1;
-    }
-    #endif
-
-    return 0;
-}
-
-static int cmd_auto_remove(void) {
-    if (!G_LPL)
-        lpl_load();
-
-    int found = 0;
-
-    for (int i = 0; G_LPL[i]; i++) {
-        if (G_LPL[i]->is_a_dep && lpl_get_dependent(G_LPL[i]->name) == NULL) {
-            found = 1;
-            if (cmd_remove_remove(G_LPL[i]->name))
-                return -1;
-            if (lpl_remove(G_LPL[i]->name) == 0)
-                continue;
-            // should not happen
-            fprintf(stderr, "stp: Package '%s' not found in local package list\n", G_LPL[i]->name);
-            return -1;
-        }
-    }
-
-    if (found)
-        found += cmd_auto_remove();
-
-    return found;
-}
-
-int cmd_remove(char **names) {
-    const char *dependent;
-    int success = 0;
-
-    #ifdef __profanOS__
-    check_command_exists(PATH_OLIVINE);
-    #endif
-
-    for (int i = 0; names[i]; i++) {
-        int is_installed = lpl_is_installed(names[i]);
-
-        if (is_installed == 0)
-            fprintf(stderr, "stp: Package '%s' not installed\n", names[i]);
-        else if ((dependent = lpl_get_dependent(names[i])) != NULL)
-            if (is_installed == 1) {
-                printf("package '%s' requires by '%s' is now marked only as a dependency\n", names[i], dependent);
-                lpl_update_depflag(names[i], 1);
-                continue;
-            }
-            else
-                fprintf(stderr, "stp: Failed to remove '%s' because '%s' uses it\n", names[i], dependent);
-        else if (cmd_remove_remove(names[i]))
-            ; // error already printed
-        else if (lpl_remove(names[i]))
-            fprintf(stderr, "stp: Failed to remove '%s' from local package list\n", names[i]);
-        else {
-            if (success != -1)
-                success++;
-            continue;
-        };
-        success = -1;
-    }
-
-    if (success < 0)
-        return 1;
-
-    int auto_removed = cmd_auto_remove();
-    if (auto_removed == -1) {
-        fprintf(stderr, "stp: Failed to remove unused dependencies\n");
-        return 1;
-    }
-
-    if (success == 0) {
-        if (auto_removed == 0)
-            printf("no unused dependencies found\n");
-        else
-            printf("successfully removed %d unused dependencies\n", auto_removed);
-    } else {
-        if (auto_removed == 0)
-            printf("successfully removed %d packages, no unused dependencies found\n", success);
-        else
-            printf("successfully removed %d packages and %d unused dependencies\n", success, auto_removed);
-    }
-
-    return 0;
 }
 
 int cmd_upgrade(void) {
@@ -1451,7 +1468,7 @@ int cmd_upgrade(void) {
     }
 
     printf("Successfully upgraded %d packages\n", count);
-    
+
     remove_full_dir(PATH_TEMP);
     free(dl_deps);
 
