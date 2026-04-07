@@ -253,6 +253,19 @@ static int timeout_recv(uint8_t *buf, size_t buf_size) {
     return recv(G_SOCKET_FD, buf, buf_size, 0);
 }
 
+static int mytimeout_recv(uint8_t *buf, size_t buf_size, int timeout_ms) {
+    struct pollfd pfd = { .fd = G_SOCKET_FD, .events = POLLIN };
+
+    int poll_ret = poll(&pfd, 1, timeout_ms);
+
+    if (poll_ret == -1)
+        return -1;
+    else if (poll_ret == 0)
+        return 0;
+
+    return recv(G_SOCKET_FD, buf, buf_size, 0);
+}
+
 #define RETERR(...) return (fprintf(stderr, __VA_ARGS__), -1)
 #define GOTOERR(section, ...) do {fprintf(stderr, __VA_ARGS__); goto section;} while(0)
 
@@ -426,6 +439,8 @@ static int download_send(uint64_t xid, int64_t id, int64_t offset, int64_t file_
     memcpy(buf + 16, &offset, 8);
     memcpy(buf + 24, &part_size, 2);
 
+    // printf("Requesting part at offset %" PRId64 " (size %d)\n", offset, part_size);
+
     if (send(G_SOCKET_FD, buf, 26, 0) == -1)
         RETERR("stp: [protocol err] send error: %m\n");
 
@@ -483,10 +498,7 @@ static void download_print_progress(int64_t received, stp_info_t *info) {
 
 int pkg_download(int64_t id, const char *dest_path, stp_info_t *info, download_stat_t *dl_stat) {
     uint8_t buf[STP_PKT_SIZE];
-    uint64_t received_bytes = 0, offset = 0;
-
-    if (FAST_DL_ONCE > 255)
-        RETERR("FAST_DL_ONCE must be < 256\n");
+    uint64_t block, received_bytes = 0;
 
     // open the local file for writing
     FILE *f = fopen(dest_path, "wb");
@@ -500,7 +512,9 @@ int pkg_download(int64_t id, const char *dest_path, stp_info_t *info, download_s
         RETERR("stp: Failed to set local file size\n");
     }
 
-    char received_parts[FAST_DL_ONCE]; // bitmap to track received parts
+    uint64_t required_blocks = (info->file_size + STP_MAX_PART_SIZE - 1) / STP_MAX_PART_SIZE;
+
+    char *received_parts = calloc(required_blocks, sizeof(char));
 
     uint32_t start_time = 0;
 
@@ -511,99 +525,85 @@ int pkg_download(int64_t id, const char *dest_path, stp_info_t *info, download_s
         start_time = tv.tv_sec * 1000 + tv.tv_usec / 1000;
     }
 
-    while (offset < info->file_size) {
-        int64_t part_offset = offset;
-        int to_wait;
+    // we use the last bytes of the XID to identify the part in the response
+    uint64_t xid = get_random_xid() & 0xFFFF000000;
 
-        memset(received_parts, 0, sizeof(received_parts));
+    while (received_bytes < info->file_size) {
+        block = 0;
 
-        // we use the last bytes of the XID to identify the part in the response
-        uint64_t xid = get_random_xid() & 0xFFFFFFFF00;
-
-        // receive responses
-        int retry_count = 0;
-
-        for (to_wait = 0; to_wait < FAST_DL_ONCE && offset + to_wait * STP_MAX_PART_SIZE < info->file_size; to_wait++);
-        send_and_wait:
-
-        // send requests for the parts
-        for (int i = 0; i < FAST_DL_ONCE && offset < info->file_size; i++) {
-            if (!received_parts[i] && download_send(xid + i, id, offset, info->file_size))
-                goto error;
-
-            offset += STP_MAX_PART_SIZE;
-        }
-
-        while (to_wait > 0) {
-            int rlen = timeout_recv(buf, sizeof(buf));
-
-            if (rlen == -2) {
-                if (retry_count >= MAX_RETRY_COUNT)
-                    GOTOERR(error, "stp: recv timeout, max retry count reached\n");
-                retry_count++;
-                if (dl_stat)
-                    dl_stat->packets_lost += to_wait;
-                offset = part_offset; // reset offset to resend the same parts
-                goto send_and_wait;
+        while (block < required_blocks) {
+            // send requests for the parts
+            int i = 0;
+            for (; i < FAST_DL_ONCE && block < required_blocks; block++) {
+                if (received_parts[block])
+                    continue; // already received
+                if (download_send(xid | block, id, block * STP_MAX_PART_SIZE, info->file_size))
+                    goto error;
+                i++;
             }
 
-            if (rlen < 0)
+            int rlen;
+
+            while ((rlen = (i != FAST_DL_ONCE ? // last blocks ?
+                    (mytimeout_recv(buf, sizeof(buf), 200)) :
+                    (mytimeout_recv(buf, sizeof(buf), 1))))
+                    > 0 && received_bytes < info->file_size
+            ) {
+                // printf("Received a response of length %d\n", rlen);
+
+                if (rlen < 8)
+                    GOTOERR(error, "stp: [protocol err] recv too short\n");
+
+                uint64_t r;
+                memcpy(&r, buf, 8);
+                uint16_t resp_type = R64_TO_TYPE(r);
+
+                if (TYPE_IS_ERR(resp_type))
+                    GOTOERR(error, "stp: [protocol err] error response received: %s (0x%04x)\n",
+                                error_to_str(resp_type), resp_type);
+
+                if (resp_type != READ_PART_RSP)
+                    GOTOERR(error, "stp: [protocol err] unexpected response type 0x%04x\n", resp_type);
+
+                unsigned block_index = R64_TO_XID(r) & 0xFFFFFF;
+
+                if ((R64_TO_XID(r) & 0xFFFF000000) != xid || block_index >= required_blocks || received_parts[block_index])
+                    continue; // probably an old response timed out
+
+                int expected_len = info->file_size - (block_index * STP_MAX_PART_SIZE);
+                if (expected_len > STP_MAX_PART_SIZE)
+                    expected_len = STP_MAX_PART_SIZE;
+                expected_len += 8; // +8 for the header
+
+                if (rlen != expected_len)
+                    GOTOERR(error, "stp: [protocol err] recv wrong length %d (expected %d)\n", rlen, expected_len);
+
+                // write the data to the file at the correct offset
+                if (fseek(f, block_index * STP_MAX_PART_SIZE, SEEK_SET) != 0)
+                    GOTOERR(error, "stp: Failed to seek in local file\n");
+
+                rlen -= 8;
+
+                if (fwrite(buf + 8, 1, rlen, f) != (size_t) rlen)
+                    GOTOERR(error, "stp: Failed to write to local file\n");
+
+                received_bytes += rlen;
+                if (!G_DOWNLOAD_MUTE)
+                    download_print_progress(received_bytes, info);
+
+                if (dl_stat)
+                    dl_stat->packets_recv++;
+
+                received_parts[block_index] = 1;
+            }
+
+            if (rlen == -1)
                 GOTOERR(error, "stp: recv error: %m\n");
-
-            if (rlen < 8)
-                GOTOERR(error, "stp: [protocol err] recv too short\n");
-
-            uint64_t r;
-            memcpy(&r, buf, 8);
-            uint16_t resp_type = R64_TO_TYPE(r);
-
-            if (TYPE_IS_ERR(resp_type))
-                GOTOERR(error, "stp: [protocol err] error response received: %s (0x%04x)\n",
-                            error_to_str(resp_type), resp_type);
-
-            if (resp_type != READ_PART_RSP)
-                GOTOERR(error, "stp: [protocol err] unexpected response type 0x%04x\n", resp_type);
-
-            int part_index = R64_TO_XID(r) & 0xFF;
-
-            if ((R64_TO_XID(r) & 0xFFFFFFFF00) != xid || part_index >= FAST_DL_ONCE || received_parts[part_index])
-                continue; // probably an old response timed out
-
-            int expected_len = info->file_size - (part_offset + part_index * STP_MAX_PART_SIZE);
-            if (expected_len > STP_MAX_PART_SIZE)
-                expected_len = STP_MAX_PART_SIZE;
-            expected_len += 8; // +8 for the header
-
-            if (rlen != expected_len)
-                GOTOERR(error, "stp: [protocol err] recv wrong length %d (expected %d)\n", rlen, expected_len);
-
-            // write the data to the file at the correct offset
-            if (fseek(f, part_offset + part_index * STP_MAX_PART_SIZE, SEEK_SET) != 0)
-                GOTOERR(error, "stp: Failed to seek in local file\n");
-
-            rlen -= 8;
-
-            if (fwrite(buf + 8, 1, rlen, f) != (size_t) rlen)
-                GOTOERR(error, "stp: Failed to write to local file\n");
-
-            received_bytes += rlen;
-            if (!G_DOWNLOAD_MUTE)
-                download_print_progress(received_bytes, info);
-
-            if (dl_stat)
-                dl_stat->packets_recv++;
-
-            received_parts[part_index] = 1;
-            to_wait--;
         }
     }
 
     if (!G_DOWNLOAD_MUTE)
         printf("\n");
-
-    if (received_bytes != info->file_size)
-        GOTOERR(error, "stp: error: received %"PRId64" bytes, expected %"PRId64"\n",
-                    received_bytes, info->file_size);
 
     fflush(f); // write before checking sum
 
@@ -1433,6 +1433,13 @@ int cmd_upgrade(void) {
         dl_deps[++count].id = -1;
     }
 
+    if (count == 0) {
+        printf("All packages are up to date\n");
+        remove_full_dir(PATH_TEMP);
+        free(dl_deps);
+        return 0;
+    }
+
     print_download_stats();
 
     for (int i = 0; dl_deps[i].id != -1; i++) {
@@ -1443,18 +1450,17 @@ int cmd_upgrade(void) {
         lpl_update_version(dl_deps[i].name, dl_deps[i].id);
     }
 
+    printf("Successfully upgraded %d packages\n", count);
+    
     remove_full_dir(PATH_TEMP);
     free(dl_deps);
-
-    if (count == 0)
-        printf("All packages are up to date\n");
-    else
-        printf("Successfully upgraded %d packages\n", count);
 
     return 0;
 }
 
 int cmd_get(char **names) {
+    memset(&g_alltime_dl_stat, 0, sizeof(g_alltime_dl_stat));
+
     for (int i = 0; names[i]; i++) {
         int64_t id = pkg_get_id(names[i]);
         if (id == 0)
@@ -1475,10 +1481,18 @@ int cmd_get(char **names) {
             else
                 snprintf(dl_path, sizeof(dl_path), "%s", info.name);
 
-            if (pkg_download(id, dl_path, &info, NULL) == -1)
+            download_stat_t dl_stat;
+
+            if (pkg_download(id, dl_path, &info, &dl_stat) == -1)
                 return 1;
+
+            g_alltime_dl_stat.packets_lost += dl_stat.packets_lost;
+            g_alltime_dl_stat.packets_recv += dl_stat.packets_recv;
+            g_alltime_dl_stat.total_ms     += dl_stat.total_ms;
         }
     }
+
+    print_download_stats();
 
     return 0;
 }
