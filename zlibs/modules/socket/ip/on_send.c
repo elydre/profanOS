@@ -57,6 +57,7 @@ void socket_on_send_ip(uint32_t src_ip, uint32_t dest_ip, uint8_t protocol, uint
     eth_info_t info;
     eth_get_info(0, &info);
 
+
     mem_copy(&eth_buffer[6], &info.mac, 6);
     if ((src_ip & info.net_mask) == (dest_ip & info.net_mask))
         mem_copy(eth_buffer, "\xff\xff\xff\xff\xff\xff", 6);

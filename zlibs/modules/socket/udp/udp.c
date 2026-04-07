@@ -50,7 +50,8 @@ void socket_udp_tick(socket_t *sock) {
     }
     if (!info->send_len)
         return ;
+    socket_on_send_udp(&info->send[0]);
+    free(info->send[0].data);
     info->send_len--;
-    socket_on_send_udp(&info->send[info->send_len]);
-    free(info->send[info->send_len].data);
+    mem_copy(info->send, &info->send[1], sizeof(udp_packet_t) * info->send_len);
 }

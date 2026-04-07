@@ -15,8 +15,10 @@
 
 #include "udp.h"
 #include "ip.h"
+#include "arp.h"
 
 #define ETHER_IP4 0x0800
+#define ETHER_ARP 0x0806
 
 void socket_tick(int len, uint8_t *packet) {
     for (int i = 0; i < sockets_len; i++) {
@@ -43,6 +45,9 @@ void socket_tick(int len, uint8_t *packet) {
             switch (ether_type) {
                 case ETHER_IP4:
                     socket_on_recv_ip(len, packet);
+                    break;
+                case ETHER_ARP:
+                    socket_on_recv_arp(len, packet);
                     break;
                 default:
                     break;
