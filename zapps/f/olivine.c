@@ -2027,13 +2027,13 @@ char *if_fstat(char **input) {
         case 'h':
             puts("Usage: fstat [option] <file>\n"
                 "Options:\n"
+                "  -h   display this help\n"
                 "  -e   check if path exists\n"
                 "  -d   check if path is a directory\n"
                 "  -f   check if path is a file\n"
                 "  -m   last modification time\n"
                 "  -p   3 digits permission\n"
                 "  -s   size of the file in bytes"
-                "  -h   display this help\n"
             );
             break;
         case 'e':
