@@ -53,5 +53,5 @@ void socket_udp_tick(socket_t *sock) {
     socket_on_send_udp(&info->send[0]);
     free(info->send[0].data);
     info->send_len--;
-	mem_copy(info->send, &info->send[1], sizeof(udp_packet_t) * info->send_len);
+    mem_copy(info->send, &info->send[1], sizeof(udp_packet_t) * info->send_len);
 }

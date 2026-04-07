@@ -46,9 +46,9 @@ void socket_tick(int len, uint8_t *packet) {
                 case ETHER_IP4:
                     socket_on_recv_ip(len, packet);
                     break;
-				case ETHER_ARP:
-					socket_on_recv_arp(len, packet);
-					break;
+                case ETHER_ARP:
+                    socket_on_recv_arp(len, packet);
+                    break;
                 default:
                     break;
             }
