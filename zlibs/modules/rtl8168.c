@@ -1,26 +1,37 @@
+/*****************************************************************************\
+|   === rtl8168.c : 2026 ===                                                  |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 /**
  * @file drivers/net/rtl8169/rtl8169.c
  * @brief RTL1869 network card driver
- * 
- * 
+ *
+ *
  * @copyright
  * This file is part of the Hexahedron kernel, which is part of the Ethereal Operating System.
  * It is released under the terms of the BSD 3-clause license.
  * Please see the LICENSE file in the main repository for more details.
- * 
+ *
  * Copyright (C) 2025 Samuel Stuart
  */
 
 /**
  * @file drivers/net/rtl8169/rtl8169.h
  * @brief RTL8169 network card driver
- * 
- * 
+ *
+ *
  * @copyright
  * This file is part of the Hexahedron kernel, which is part of the Ethereal Operating System.
  * It is released under the terms of the BSD 3-clause license.
  * Please see the LICENSE file in the main repository for more details.
- * 
+ *
  * Copyright (C) 2025 Samuel Stuart
  */
 
@@ -43,7 +54,7 @@
 #define RTL8169_REG_IDR2            0x02
 #define RTL8169_REG_IDR3            0x03
 #define RTL8169_REG_IDR4            0x04
-#define RTL8169_REG_IDR5            0x05  
+#define RTL8169_REG_IDR5            0x05
 #define RTL8169_REG_TNPDS           0x20            // Transmit Normal Priority Descriptors
 #define RTL8169_REG_CR              0x37            // Command register
 #define RTL8169_REG_TPPoll          0x38            // TPPoll
@@ -310,7 +321,7 @@ int rtl8169_initializeRx(rtl8169_t *nic) {
  * @param nic The NIC to initialize Tx registers for
  * @returns 0 on success
  */
-int rtl8169_initializeTx(rtl8169_t *nic) {    
+int rtl8169_initializeTx(rtl8169_t *nic) {
     // Create regions
     nic->tx_buffers = (uint32_t) mem_alloc(RTL8169_TX_DESC_COUNT * RTL8169_TX_BUFFER_SIZE, 1, 0x1000);
     nic->tx_descriptors = (uint32_t) mem_alloc(RTL8169_TX_DESC_COUNT * sizeof(rtl8169_desc_t), 1, 0x1000);
@@ -354,15 +365,15 @@ int rtl8169_initializeTx(rtl8169_t *nic) {
 
 void rtl8169_recv(void) {
     rtl8169_t *nic = G_NIC;
-    
+
     while (1) {
         // Get descriptor
         rtl8169_desc_t *desc = (rtl8169_desc_t*)(nic->rx_descriptors + (nic->rx_current * sizeof(rtl8169_desc_t)));
-        
+
         // Only descriptors no longer owned are valid
         if (desc->command & RTL8169_DESC_CMD_OWN)
             break;
-    
+
         // Figure out packet length
         uint16_t pkt_length = desc->command & 0x3FFF;
 
@@ -422,7 +433,7 @@ void rtl8169_irq(registers_t *regs) {
 
     if (isr & RTL8169_ISR_TOK /*&& nic->thr*/) {
         // kprintf("DEBUG: WAWWWWW packet transmitted successfully\n");
-    }  
+    }
 
     // Did we get a packet?
     if (isr & RTL8169_ISR_ROK) {
@@ -452,14 +463,14 @@ char *rtl8169_link(rtl8169_t *nic) {
     } else {
         return "???";
     }
-} 
+}
 
 /**
  * @brief Send a packet from an RTL8169 NIC
  * @param node Node
  * @param off Offset
  * @param size Size
- * @param buffer Buffer 
+ * @param buffer Buffer
  */
 int rtl8169_send(const void *buffer, uint16_t size) {
     if (!size)
@@ -529,7 +540,7 @@ int __init(void) {
     }
 
     LOG("DEBUG", "A Initializing a RTL8169 NIC (bus %d slot %d func %d)\n", device->bus, device->slot, device->function);
-    
+
     // Get BAR
     uint32_t bar = device->bar[0];
 
@@ -562,14 +573,14 @@ int __init(void) {
     }
 
     LOG("DEBUG", "MAC: %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    
+
     // Register IRQ handler
     uint32_t irq = pci_try_enable_msi(device);
     if (irq == 0) {
         LOG("ERR", "Failed to enable MSI for RTL8169\n");
         return 1;
     }
-    
+
     interrupt_register_handler(irq, rtl8169_irq);
 
     LOG("DEBUG", "Registered IRQ%d for NIC\n", irq);
@@ -598,7 +609,7 @@ int __init(void) {
     RTL8169_WRITE16(RTL8169_REG_IMR, 0xFFFF);
 
     // Enable interrupts
-    /* RTL8169_WRITE16(RTL8169_REG_IMR, RTL8169_IMR_ROK | RTL8169_IMR_RER | 
+    /* RTL8169_WRITE16(RTL8169_REG_IMR, RTL8169_IMR_ROK | RTL8169_IMR_RER |
                 RTL8169_IMR_TOK | RTL8169_IMR_TER | RTL8169_IMR_RDU |
                 RTL8169_IMR_LINKCHG | RTL8169_IMR_FOVW | RTL8169_IMR_TDU); */
 

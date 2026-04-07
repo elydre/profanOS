@@ -84,7 +84,7 @@ int isr_install(void) {
     set_idt_gate(45, irq13);
     set_idt_gate(46, irq14);
     set_idt_gate(47, irq15);
-  
+
     set_idt_gate(60, irq28);
 
     // install the syscall interrupt

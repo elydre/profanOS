@@ -1540,7 +1540,7 @@ static int parse_ipandport(const char *str, struct sockaddr_in *addr) {
 
     const char *p = strchr(str, ':');
     size_t ip_len;
-    
+
     if (!p) {
         // no port specified, use default
         ip_len = strlen(str);
