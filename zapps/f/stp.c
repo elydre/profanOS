@@ -568,7 +568,8 @@ int pkg_download(int64_t id, const char *dest_path, stp_info_t *info, download_s
 
                 unsigned block_index = R64_TO_XID(r) & 0xFFFFFF;
 
-                if ((R64_TO_XID(r) & 0xFFFF000000) != xid || block_index >= required_blocks || received_parts[block_index])
+                if ((R64_TO_XID(r) & 0xFFFF000000) != xid || block_index >= required_blocks ||
+                            received_parts[block_index])
                     continue; // probably an old response timed out
 
                 int expected_len = info->file_size - (block_index * STP_MAX_PART_SIZE);
