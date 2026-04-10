@@ -16,8 +16,11 @@
 #include <sys/types.h>
 #include <stddef.h>
 
-// getopt is in a separate header
-#include <getopt.h>
+#ifndef _LONG_GETOPT_H
+  #define _LONG_GETOPT_H // we just need the basic part of getopt.h
+  #include <getopt.h>
+  #undef _LONG_GETOPT_H
+#endif
 
 _BEGIN_C_FILE
 
