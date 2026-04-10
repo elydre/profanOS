@@ -16,6 +16,9 @@
 #include <sys/types.h>
 #include <stddef.h>
 
+// getopt is in a separate header
+#include <getopt.h>
+
 _BEGIN_C_FILE
 
 #define _POSIX_THREADS 1
@@ -43,25 +46,6 @@ _BEGIN_C_FILE
 // sysconf and pathconf
 #define _SC_TTY_NAME_MAX 1
 #define _PC_PATH_MAX     2
-
-// getopt
-#ifdef __GNUC__
-  extern int optind, opterr, optopt;
-  extern char *optarg;
-#else
-  // old compilers make simple R_386_COPY
-  // of external variables
-
-  extern int   *__getoptind(void);
-  extern int   *__getopterr(void);
-  extern int   *__getoptopt(void);
-  extern char **__getoptarg(void);
-
-  #define optind (*__getoptind())
-  #define opterr (*__getopterr())
-  #define optopt (*__getoptopt())
-  #define optarg (*__getoptarg())
-#endif
 
 int      access(const char *pathname, int mode);
 unsigned alarm(unsigned a);
@@ -98,7 +82,6 @@ long     gethostid(void);
 int      gethostname(char *a, size_t n);
 char    *getlogin(void);
 int      getlogin_r(char *a, size_t n);
-int      getopt(int a, char * const *b, const char *c);
 pid_t    getpgid(pid_t a);
 pid_t    getpgrp(void);
 pid_t    getpid(void);
