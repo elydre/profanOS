@@ -28,27 +28,6 @@
 uint32_t g_wd_sid = SID_ROOT;
 char g_wd_path[PATH_MAX] = "/";
 
-int   opterr = 1, // if error message should be printed
-      optind = 1, // index into parent argv vector
-      optopt;     // character checked for validity
-char *optarg;     // argument associated with option
-
-int *__getoptind(void) {
-    return &optind;
-}
-
-int *__getopterr(void) {
-    return &opterr;
-}
-
-int *__getoptopt(void) {
-    return &optopt;
-}
-
-char **__getoptarg(void) {
-    return &optarg;
-}
-
 int access(const char *pathname, int mode) {
     // add the current working directory to the filename
     uint32_t elem = profan_path_resolve(pathname);
@@ -353,63 +332,6 @@ char *getlogin(void) {
 
 int getlogin_r(char *a, size_t n) {
     return (PROFAN_FNI, 0);
-}
-
-int getopt(int nargc, char *const *nargv, const char *ostr) {
-    static char *place = "";
-    char *oli;
-
-    if (!*place) {
-        if (optind >= nargc || *(place = nargv[optind]) != '-') {
-            place = "";
-            return -1;
-        }
-
-        if (place[1] && *++place == '-' && place[1] == '\0') {
-            optind++;
-            place = "";
-            return -1;
-        }
-    }
-
-    if ((optopt = (int) *place++) == (int) ':' || !(oli = strchr(ostr, optopt))) {
-        if (optopt == (int) '-') {
-            place = "";
-            return -1;
-        }
-        if (!*place)
-            optind++;
-        if (opterr && *ostr != ':')
-            fprintf(stderr, "%s: invalid option -- '%c'\n",
-                    program_invocation_short_name, optopt);
-        return (int) '?';
-    }
-
-    if (*++oli != ':') {
-        optarg = NULL;
-        if (!*place)
-            optind++;
-        return optopt;
-    }
-
-    if (*place) {
-        optarg = place;
-    } else if (nargc <= ++optind) {
-        place = "";
-        if (*ostr == ':')
-            return (int) ':';
-        if (opterr)
-            fprintf(stderr, "%s: option requires an argument -- '%c'\n",
-                    program_invocation_short_name, optopt);
-        return (int) '?';
-    } else {
-        optarg = nargv[optind];
-    }
-
-    place = "";
-    optind++;
-
-    return optopt;
 }
 
 pid_t getpgid(pid_t a) {
