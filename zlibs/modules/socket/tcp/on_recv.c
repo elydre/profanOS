@@ -69,19 +69,19 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
             continue;
         tcp_t *sock = sockets[i].data;
 
-        if (sock.local_port != packet.port_dest)
+        if (sock->local_port != packet.port_dest)
             continue;
     
-        if (sock.local_ip != 0 && sock.local_ip != packet.dest_ip)
+        if (sock->local_ip != 0 && sock->local_ip != packet.ip_dest)
             continue;
 
-        if (sock.remote_ip != 0 && sock.remote_ip != packet.src_ip)
+        if (sock->remote_ip != 0 && sock->remote_ip != packet.ip_src)
             continue;
 
-        if (sock.remote_port == 0)
+        if (sock->remote_port == 0)
             server_sock = sock; // server
        
-        if (sock.remote_port == packet.port_src)
+        if (sock->remote_port == packet.port_src)
             client_sock = sock; // client
         
     }

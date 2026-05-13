@@ -27,8 +27,8 @@ typedef struct {
     uint16_t local_port;
     uint16_t remote_port;
 
-    uint32_t local_addr;
-    uint32_t remote_addr;
+    uint32_t local_ip;
+    uint32_t remote_ip;
 
     uint8_t tosend[0xffff];
     uint16_t tosend_len;
@@ -36,8 +36,8 @@ typedef struct {
     uint8_t recv[0xffff];
     uint16_t recv_len;
 
-    uint32_t seq;
-    uint32_t ack;
+    uint32_t current_seq;
+    uint32_t to_ack;
 } tcp_t;
 
 typedef struct {
