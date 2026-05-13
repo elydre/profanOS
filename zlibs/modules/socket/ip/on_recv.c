@@ -12,6 +12,7 @@
 #include <minilib.h>
 
 #include "udp.h"
+#include "tcp.h"
 #include "ip.h"
 
 
@@ -53,6 +54,9 @@ void socket_on_recv_ip(int len, uint8_t *packet) {
     switch (header.protocol) {
         case 17: // udp
             socket_on_recv_udp(header.src_ip, header.dest_ip, header.data, header.data_len);
+            break;
+        case 6: // tcp
+            socket_on_recv_tcp(header.src_ip, header.dest_ip, header.data, header.data_len);
             break;
         default:
             break;

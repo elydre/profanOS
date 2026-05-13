@@ -11,6 +11,7 @@
 
 #include <modules/socket.h>
 #include "udp.h"
+#include "tcp.h"
 
 protocol_t socket_protocols[] = {
     {
@@ -21,6 +22,15 @@ protocol_t socket_protocols[] = {
         socket_udp_sendto,
         socket_udp_recvfrom,
         socket_udp_get_rw,
+    },
+    {
+        SOCKET_TCP,
+        socket_tcp_init,
+        socket_tcp_bind,
+        socket_tcp_connect,
+        socket_tcp_sendto,
+        socket_tcp_recvfrom,
+        socket_tcp_get_rw,
     },
     {0},
 };
