@@ -21,6 +21,13 @@
 #define TCP_STATE_SYN_SENT 2
 #define TCP_STATE_OPEN     3
 
+#define TCP_FLAG_FIN (1 << 0)
+#define TCP_FLAG_SYN (1 << 1)
+#define TCP_FLAG_RST (1 << 2)
+#define TCP_FLAG_PSH (1 << 3)
+#define TCP_FLAG_ACK (1 << 4)
+#define TCP_FLAG_URG (1 << 5)
+
 typedef struct {
     uint8_t state;
 
@@ -36,9 +43,12 @@ typedef struct {
     uint8_t recv[0xffff];
     uint16_t recv_len;
 
+    uint32_t first_seq;
     uint32_t current_seq;
-    uint32_t to_ack;
-} tcp_t;
+    uint8_t do_wait_ack;
+    uint32_t first_ack; // first seq sent by the other side
+    uint32_t current_ack;
+ } tcp_t;
 
 typedef struct {
     uint32_t ip_src;

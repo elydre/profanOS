@@ -88,9 +88,9 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 
 
     if (client_sock)
-        udpate_sock_tcp(client_sock, &packet);
+        tcp_on_packet_recv(client_sock, &packet);
     else if (server_sock)
-        update_sock_tcp(server_sock, &packet);
+        tcp_on_packet_recv(server_sock, &packet);
     else
         return ; // TODO: send RST
 }
