@@ -10,16 +10,45 @@
 \*****************************************************************************/
 
 #include "tcp.h"
+#include <cpu/timer.h>
+#include "../include/ip.h"
 
+uint16_t tcp_checksum(void *data, int len, uint32_t ip_src, uint32_t ip_dest) {
+    uint8_t *udp_data = (uint8_t *)data;
+    uint32_t sum = 0;
+    uint8_t buffer[12];
+    mem_copy(buffer, &ip_src, 4);
+    mem_copy(buffer + 4, &ip_dest, 4);
+    buffer[8] = 0;
+    buffer[9] = 6;
+    buffer[10] = len >> 8;
+    buffer[11] = len & 0xff;
+    for (int i = 0; i < 12; i += 2) {
+        uint16_t word = buffer[i] << 8;
+        word |= buffer[i + 1];
+        sum += word;
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
 
+    for (int i = 0; i < len; i += 2) {
+        uint16_t word = udp_data[i] << 8;
+        if (i + 1 < len)
+            word |= udp_data[i + 1];
+        sum += word;
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+    sum = (sum & 0xFFFF) + (sum >> 16);
+    sum += (sum >> 16);
+    return ~sum;
+}
 
 void tcp_send_general(tcp_packet_t *packet) {
     static uint8_t buffer[2048];
     
-    buffer[0] = packet->src_port >> 8;
-    buffer[1] = packet->src_port & 0xff;
-    buffer[2] = packet->dest_port >> 8;
-    buffer[3] = packet->dest_port & 0xff;
+    buffer[0] = packet->port_src >> 8;
+    buffer[1] = packet->port_src & 0xff;
+    buffer[2] = packet->port_dest >> 8;
+    buffer[3] = packet->port_dest & 0xff;
     buffer[4] = packet->seq >> 24;
     buffer[5] = (packet->seq >> 16) & 0xff;
     buffer[6] = (packet->seq >> 8) & 0xff;
@@ -32,33 +61,83 @@ void tcp_send_general(tcp_packet_t *packet) {
     buffer[13] = packet->flags;
     buffer[14] = packet->window >> 8;
     buffer[15] = packet->window & 0xff;
-    uint16_t checksum = tcp_compute_checksum(packet);
+    uint16_t checksum = tcp_checksum(buffer, 20 + packet->data_len, packet->ip_src, packet->ip_dest);
     buffer[16] = checksum >> 8;
     buffer[17] = checksum & 0xff;
-    
-
-    buffer[18] = packet->urgent >> 8;
-    buffer[19] = packet->urgent & 0xff;
-    memcpy(buffer + 20, packet->data, packet->data_len);
-    ip_send(packet->src_ip, packet->dest_ip, IP_PROTO_TCP, buffer, 20 + packet->data_len);
+    buffer[18] = packet->urgent_ptr >> 8;
+    buffer[19] = packet->urgent_ptr & 0xff;
+    mem_copy(buffer + 20, packet->data, packet->data_len);
+    socket_on_send_ip(packet->ip_src, packet->ip_dest, 6, buffer, 20 + packet->data_len);
 }
 
 void tcp_send_syn(tcp_t *sock) {
-    // !TODO implement this
-    sock->last_send = now;
+    sock->last_send = timer_get_ms();
+
+    tcp_packet_t packet;
+    packet.ip_src = sock->local_ip;
+    packet.ip_dest = sock->remote_ip;
+    packet.port_src = sock->local_port;
+    packet.port_dest = sock->remote_port;
+    packet.seq = sock->current_seq;
+    packet.ack = 0;
+    packet.flags = TCP_FLAG_SYN;
+    packet.window = 65535;
+    packet.urgent_ptr = 0;
+    packet.data = NULL;
+    packet.data_len = 0;
+    tcp_send_general(&packet);
 }
 
 void tcp_send_data(tcp_t *sock) {
-    // !TODO implement this
-    sock->last_send = now;
+    sock->last_send = timer_get_ms();
+
+    tcp_packet_t packet;
+    packet.ip_src = sock->local_ip;
+    packet.ip_dest = sock->remote_ip;
+    packet.port_src = sock->local_port;
+    packet.port_dest = sock->remote_port;
+    packet.seq = sock->current_seq;
+    packet.ack = sock->current_ack;
+    packet.flags = TCP_FLAG_ACK | TCP_FLAG_PSH;
+    packet.window = 65535;
+    packet.urgent_ptr = 0;
+    packet.data = sock->tosend;
+    packet.data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE); // TODO check
+    tcp_send_general(&packet);
 }
 
 void tcp_send_ack(tcp_t *sock) {
-    // !TODO implement this
-    sock->last_send = now;
+    sock->last_send = timer_get_ms();
+
+    tcp_packet_t packet;
+    packet.ip_src = sock->local_ip;
+    packet.ip_dest = sock->remote_ip;
+    packet.port_src = sock->local_port;
+    packet.port_dest = sock->remote_port;
+    packet.seq = sock->current_seq;
+    packet.ack = sock->current_ack;
+    packet.flags = TCP_FLAG_ACK;
+    packet.window = 65535;
+    packet.urgent_ptr = 0;
+    packet.data = NULL;
+    packet.data_len = 0;
+    tcp_send_general(&packet);
 }
 
 void tcp_send_reset(tcp_t *sock) {
-    // !TODO implement this
-    sock->last_send = now;
+    sock->last_send = timer_get_ms();
+
+    tcp_packet_t packet;
+    packet.ip_src = sock->local_ip;
+    packet.ip_dest = sock->remote_ip;
+    packet.port_src = sock->local_port;
+    packet.port_dest = sock->remote_port;
+    packet.seq = sock->current_seq;
+    packet.ack = sock->current_ack;
+    packet.flags = TCP_FLAG_RST;
+    packet.window = 65535;
+    packet.urgent_ptr = 0;
+    packet.data = NULL;
+    packet.data_len = 0;
+    tcp_send_general(&packet);
 }

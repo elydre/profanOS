@@ -1,3 +1,5 @@
+#include "../include/utils.h"
+#include <modules/socket.h>
 
 static uint8_t bitmap[0xFFFF / 8] = {0};
 

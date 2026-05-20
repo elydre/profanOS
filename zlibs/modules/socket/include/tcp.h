@@ -13,6 +13,7 @@
 #define TCP_H
 
 #include <modules/socket.h>
+#include <minilib.h>
 
 #define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (0 << 16))
 
@@ -83,16 +84,19 @@ ssize_t socket_tcp_sendto(socket_t *sock, const void *buf, size_t len, int flags
 ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len, int flags,
             struct sockaddr *src_addr, socklen_t *addrlen);
 int socket_tcp_get_rw(socket_t *sock);
+void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet);
 
-
-void socket_tcp_tick(socket_t *sock);
 void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int data_len);
-void socket_on_send_tcp(?);
 void socket_tcp_tick(tcp_t *sock);
 
 void tcp_send_syn(tcp_t *sock);
 void tcp_send_data(tcp_t *sock);
 void tcp_send_ack(tcp_t *sock);
 void tcp_send_reset(tcp_t *sock);
+
+int tcp_is_port_free(uint16_t port);
+void tcp_lock_port(uint16_t port);
+void tcp_free_port(uint16_t port);
+uint16_t tcp_get_free_port();
 
 #endif

@@ -9,7 +9,9 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <modules/eth.h>
 #include <minilib.h>
+#include <errno.h>
 
 #include "tcp.h"
 
@@ -28,6 +30,9 @@ int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
     tcp_t *data = sock->data;
     if (data->is_connected)
         return -EISCONN;
+
+    eth_info_t info;
+    eth_get_info(0, &info);
 
     if (!data->is_bound) {
         struct sockaddr_in addr;

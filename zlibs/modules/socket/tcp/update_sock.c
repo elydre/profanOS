@@ -47,8 +47,8 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                 }
                 else {
                     // check if data is longer than our buffer-curesnt size (comunisum)
-                    if (!(packet->data_len > sizeof(sock->recv) - sock->recv_len)) {
-                        memcpy(sock->recv + sock->recv_len, packet->data, packet->data_len);
+                    if (!(packet->data_len > (int) sizeof(sock->recv) - sock->recv_len)) {
+                        mem_copy(sock->recv + sock->recv_len, packet->data, packet->data_len);
                         sock->recv_len += packet->data_len;
                         sock->current_ack += packet->data_len;
                         tcp_send_ack(sock);

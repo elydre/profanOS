@@ -1,4 +1,7 @@
+#include <minilib.h>
+#include <errno.h>
 
+#include "tcp.h"
 
 int socket_tcp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen) {
     tcp_t *data = sock->data;

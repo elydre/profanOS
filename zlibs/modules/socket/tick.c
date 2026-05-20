@@ -16,6 +16,7 @@
 #include "udp.h"
 #include "ip.h"
 #include "arp.h"
+#include "tcp.h"
 
 #define ETHER_IP4 0x0800
 #define ETHER_ARP 0x0806
@@ -26,8 +27,8 @@ void socket_tick(int len, uint8_t *packet) {
             case SOCKET_UDP:
                 socket_udp_tick(&sockets[i]);
                 break;
-            case SOCK_TCP:
-                socket_tcp_tick(&sockets[i]);
+            case SOCKET_TCP:
+                socket_tcp_tick(sockets[i].data);
                 break;
             default:
                 sys_warning("%d %d %d\n", AF_INET, SOCK_DGRAM, 0);
