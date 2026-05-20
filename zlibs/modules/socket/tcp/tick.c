@@ -23,19 +23,16 @@ void socket_tcp_tick(tcp_t *sock) {
         case TCP_STATE_SYN_SENT:
             if (sock->do_wait_ack && sock->last_send + TCP_TIMEOUT < now) {
                 tcp_send_syn(sock);
-                sock->last_send = now;
                 sock->retries++;
             }
             break;
         case TCP_STATE_OPEN:
             if (sock->do_wait_ack && sock->last_send + TCP_TIMEOUT < now) {
                 tcp_send_data(sock);
-                sock->last_send = now;
                 sock->retries++;
             }
             else if (sock->tosend_len > 0 && !sock->do_wait_ack) {
                 tcp_send_data(sock);
-                sock->last_send = now;
                 sock->retries = 0;
                 sock->do_wait_ack = 1;
 

@@ -36,9 +36,11 @@ typedef struct {
 
     uint16_t local_port;
     uint16_t remote_port;
+    uint8_t is_bound;
 
     uint32_t local_ip;
     uint32_t remote_ip;
+    uint8_t is_connected;
 
     uint8_t tosend[0xffff];
     uint16_t tosend_len;
