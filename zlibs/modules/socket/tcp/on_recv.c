@@ -23,7 +23,7 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 
     packet.ip_src = src_ip;
     packet.ip_dest = dest_ip;
-    
+
     packet.port_src  = data[0] << 8;
     packet.port_src |= data[1];
 
@@ -63,7 +63,7 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 
     tcp_t *server_sock = NULL;
     tcp_t *client_sock = NULL;
-    
+
     for (int i = 0; i < sockets_len; i++) {
         if (sockets[i].type != SOCKET_TCP)
             continue;
@@ -71,7 +71,7 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 
         if (sock->local_port != packet.port_dest)
             continue;
-    
+
         if (sock->local_ip != 0 && sock->local_ip != packet.ip_dest)
             continue;
 
@@ -80,10 +80,10 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 
         if (sock->remote_port == 0)
             server_sock = sock; // server
-       
+
         if (sock->remote_port == packet.port_src)
             client_sock = sock; // client
-        
+
     }
 
 

@@ -26,6 +26,9 @@ void socket_tick(int len, uint8_t *packet) {
             case SOCKET_UDP:
                 socket_udp_tick(&sockets[i]);
                 break;
+            case SOCK_TCP:
+                socket_tcp_tick(&sockets[i]);
+                break;
             default:
                 sys_warning("%d %d %d\n", AF_INET, SOCK_DGRAM, 0);
                 sys_warning("Invalid socket type %d %d %d\n",

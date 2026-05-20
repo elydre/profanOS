@@ -28,6 +28,9 @@
 #define TCP_FLAG_ACK (1 << 4)
 #define TCP_FLAG_URG (1 << 5)
 
+#define TCP_MAX_SEND_ONCE (1024)
+#define TCP_MIN(A, B) (A < B ? A : B)
+
 typedef struct {
     uint8_t state;
 
@@ -45,9 +48,12 @@ typedef struct {
 
     uint32_t first_seq;
     uint32_t current_seq;
-    uint8_t do_wait_ack;
     uint32_t first_ack; // first seq sent by the other side
     uint32_t current_ack;
+
+    uint8_t do_wait_ack;
+    uint32_t last_send;
+    uint8_t retries;
  } tcp_t;
 
 typedef struct {
@@ -80,5 +86,11 @@ int socket_tcp_get_rw(socket_t *sock);
 void socket_tcp_tick(socket_t *sock);
 void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int data_len);
 void socket_on_send_tcp(?);
+void socket_tcp_tick(tcp_t *sock);
+
+void tcp_send_syn(tcp_t *sock);
+void tcp_send_data(tcp_t *sock);
+void tcp_send_ack(tcp_t *sock);
+void tcp_send_reset(tcp_t *sock);
 
 #endif
