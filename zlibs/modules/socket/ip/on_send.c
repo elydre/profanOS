@@ -41,7 +41,7 @@ void socket_on_send_ip(uint32_t src_ip, uint32_t dest_ip, uint8_t protocol, uint
     buffer[6] = 0x40;
     buffer[7] = 0x00;
     buffer[8] = 64;
-    buffer[9] = 17;
+    buffer[9] = protocol;
     buffer[10] = 0;
     buffer[11] = 0;
     mem_copy(&buffer[12], &src_ip, 4);

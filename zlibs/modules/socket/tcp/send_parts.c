@@ -44,11 +44,12 @@ uint16_t tcp_checksum(void *data, int len, uint32_t ip_src, uint32_t ip_dest) {
 
 void tcp_send_general(tcp_packet_t *packet) {
     static uint8_t buffer[2048];
+	mem_set(buffer, 0, sizeof(buffer));
     
-    buffer[0] = packet->port_src >> 8;
-    buffer[1] = packet->port_src & 0xff;
-    buffer[2] = packet->port_dest >> 8;
-    buffer[3] = packet->port_dest & 0xff;
+    buffer[0] = packet->port_src & 0xff;
+    buffer[1] = packet->port_src >> 8;
+    buffer[2] = packet->port_dest & 0xff;
+    buffer[3] = packet->port_dest >> 8;
     buffer[4] = packet->seq >> 24;
     buffer[5] = (packet->seq >> 16) & 0xff;
     buffer[6] = (packet->seq >> 8) & 0xff;
@@ -61,12 +62,14 @@ void tcp_send_general(tcp_packet_t *packet) {
     buffer[13] = packet->flags;
     buffer[14] = packet->window >> 8;
     buffer[15] = packet->window & 0xff;
-    uint16_t checksum = tcp_checksum(buffer, 20 + packet->data_len, packet->ip_src, packet->ip_dest);
-    buffer[16] = checksum >> 8;
-    buffer[17] = checksum & 0xff;
+    buffer[16] = 0; 
+    buffer[17] = 0; 
     buffer[18] = packet->urgent_ptr >> 8;
     buffer[19] = packet->urgent_ptr & 0xff;
     mem_copy(buffer + 20, packet->data, packet->data_len);
+    uint16_t checksum = tcp_checksum(buffer, 20 + packet->data_len, packet->ip_src, packet->ip_dest);
+    buffer[16] = checksum >> 8;
+    buffer[17] = checksum & 0xff;
     socket_on_send_ip(packet->ip_src, packet->ip_dest, 6, buffer, 20 + packet->data_len);
 }
 

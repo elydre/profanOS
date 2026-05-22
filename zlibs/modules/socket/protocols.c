@@ -28,9 +28,9 @@ protocol_t socket_protocols[] = {
         socket_tcp_init,
         socket_tcp_bind,
         socket_tcp_connect,
-        socket_tcp_sendto,
-        socket_tcp_recvfrom,
-        socket_tcp_get_rw,
+        NULL, //socket_tcp_sendto,
+        NULL, //socket_tcp_recvfrom,
+        NULL, //socket_tcp_get_rw,
     },
     {0},
 };

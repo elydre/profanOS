@@ -13,6 +13,7 @@
 #include <minilib.h>
 
 #include "tcp.h"
+#include "utils.h"
 
 
 void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int data_len) {
@@ -26,9 +27,11 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 
     packet.port_src  = data[0] << 8;
     packet.port_src |= data[1];
+	packet.port_src = htons(packet.port_src);
 
     packet.port_dest  = data[2] << 8;
     packet.port_dest |= data[3];
+	packet.port_dest = htons(packet.port_dest);
 
     packet.seq  = (uint32_t)data[4] << 24;
     packet.seq |= (uint32_t)data[5] << 16;
@@ -86,11 +89,10 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 
     }
 
-
     if (client_sock)
         tcp_on_packet_recv(client_sock, &packet);
     else if (server_sock)
         tcp_on_packet_recv(server_sock, &packet);
     else
-        return ; // TODO: send RST
+		tcp_send_reset(NULL);
 }

@@ -25,11 +25,13 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                 sock->first_ack = packet->seq;
 
                 sock->current_seq = sock->first_seq + 1;
+				sock->current_ack = packet->seq + 1;
 
                 tcp_send_ack(sock);
                 sock->last_send = 0;
                 sock->retries = 0;
                 sock->do_wait_ack = 0;
+
             }
             break;
         case TCP_STATE_OPEN:
@@ -54,23 +56,29 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                         tcp_send_ack(sock);
                     }
                 }
+			}
 
-                if (packet->flags & TCP_FLAG_ACK) {
-                    size_t data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
-                    if (packet->ack - sock->first_seq <= sock->current_seq - sock->first_seq) {
-                        // ignore a past ack
-                    }
-                    else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len) {
-                        // this is too far in the future
-                    }
-                    else {
-                        // present ack
-                        int to_remove = (packet->ack - sock->first_seq) - (sock->current_seq - sock->first_seq);
-                        mem_move(sock->tosend, sock->tosend + to_remove, sock->tosend_len - to_remove);
-                        sock->tosend_len -= to_remove;
-                    }
-                }
-            }
+           if (packet->flags & TCP_FLAG_ACK) {
+               size_t data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
+               if (packet->ack - sock->first_seq <= sock->current_seq - sock->first_seq) {
+                   // ignore a past ack
+				   kprintf("PAST\n");
+               }
+               else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len) {
+                   // this is too far in the future
+				   kprintf("FUTUR\n");
+               }
+               else {
+                   // present ack
+				   kprintf("PRESENT\n");
+                   int to_remove = (packet->ack - sock->first_seq) - (sock->current_seq - sock->first_seq);
+                   mem_move(sock->tosend, sock->tosend + to_remove, sock->tosend_len - to_remove);
+                   sock->tosend_len -= to_remove;
+				   sock->retries = 0;
+				   sock->do_wait_ack = 0;
+               }
+           }
+            
 
             break;
         default:
