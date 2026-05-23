@@ -79,8 +79,11 @@ typedef struct {
 int socket_tcp_init(socket_t *sock);
 int socket_tcp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen);
 int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t addrlen);
+
 ssize_t socket_tcp_sendto(socket_t *sock, const void *buf, size_t len, int flags,
             const struct sockaddr *dest_addr, socklen_t addrlen);
+ssize_t socket_tcp_send(socket_t *sock, const uint8_t *buffer, size_t len, int flags);
+
 ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len, int flags,
             struct sockaddr *src_addr, socklen_t *addrlen);
 int socket_tcp_get_rw(socket_t *sock);
@@ -98,5 +101,6 @@ int tcp_is_port_free(uint16_t port);
 void tcp_lock_port(uint16_t port);
 void tcp_free_port(uint16_t port);
 uint16_t tcp_get_free_port();
+uint32_t tcp_rand32();
 
 #endif

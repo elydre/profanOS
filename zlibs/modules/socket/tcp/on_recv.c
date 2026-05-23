@@ -93,6 +93,15 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
         tcp_on_packet_recv(client_sock, &packet);
     else if (server_sock)
         tcp_on_packet_recv(server_sock, &packet);
-    else
-		tcp_send_reset(NULL);
+    else {
+		tcp_t tmp;
+		tmp.local_ip = packet.ip_dest;
+		tmp.remote_ip = packet.ip_src;
+		tmp.local_port = packet.port_dest;
+		tmp.remote_port = packet.port_src;
+		tmp.current_seq = packet.ack;
+		tmp.current_ack = packet.seq + packet.data_len;
+		tmp.recv_len = sizeof(tmp.recv);
+		tcp_send_reset(&tmp);
+	}
 }

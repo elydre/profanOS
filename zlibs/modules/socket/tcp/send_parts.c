@@ -13,6 +13,10 @@
 #include <cpu/timer.h>
 #include "../include/ip.h"
 
+static uint16_t get_window(tcp_t *data) {
+	return sizeof(data->recv) - data->recv_len;
+}
+
 uint16_t tcp_checksum(void *data, int len, uint32_t ip_src, uint32_t ip_dest) {
     uint8_t *udp_data = (uint8_t *)data;
     uint32_t sum = 0;
@@ -102,10 +106,10 @@ void tcp_send_data(tcp_t *sock) {
     packet.seq = sock->current_seq;
     packet.ack = sock->current_ack;
     packet.flags = TCP_FLAG_ACK | TCP_FLAG_PSH;
-    packet.window = 65535;
+    packet.window = get_window(sock);
     packet.urgent_ptr = 0;
     packet.data = sock->tosend;
-    packet.data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE); // TODO check
+    packet.data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
     tcp_send_general(&packet);
 }
 
@@ -120,7 +124,7 @@ void tcp_send_ack(tcp_t *sock) {
     packet.seq = sock->current_seq;
     packet.ack = sock->current_ack;
     packet.flags = TCP_FLAG_ACK;
-    packet.window = 65535;
+    packet.window = get_window(sock);
     packet.urgent_ptr = 0;
     packet.data = NULL;
     packet.data_len = 0;
@@ -138,7 +142,7 @@ void tcp_send_reset(tcp_t *sock) {
     packet.seq = sock->current_seq;
     packet.ack = sock->current_ack;
     packet.flags = TCP_FLAG_RST;
-    packet.window = 65535;
+    packet.window = get_window(sock);
     packet.urgent_ptr = 0;
     packet.data = NULL;
     packet.data_len = 0;

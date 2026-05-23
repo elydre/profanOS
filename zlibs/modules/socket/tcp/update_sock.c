@@ -18,7 +18,7 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
         case TCP_STATE_SYN_SENT: // we sent SYN, but we haven't received SYN+ACK yet
             if ((packet->flags & (TCP_FLAG_SYN | TCP_FLAG_ACK)) == (TCP_FLAG_SYN | TCP_FLAG_ACK)) {
                 if (packet->ack != sock->first_seq + 1) {
-                    // !TODO send RST
+					tcp_send_reset(sock);
                     return;
                 }
                 sock->state = TCP_STATE_OPEN;
@@ -76,6 +76,7 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                    sock->tosend_len -= to_remove;
 				   sock->retries = 0;
 				   sock->do_wait_ack = 0;
+				   sock->current_seq += to_remove;
                }
            }
             

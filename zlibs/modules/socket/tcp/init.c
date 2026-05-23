@@ -2,7 +2,7 @@
 #include <modules/filesys.h>
 #include <fcntl.h>
 
-static uint32_t rand32() {
+uint32_t tcp_rand32() {
 	int fd = fm_open("/dev/random", O_RDONLY);
 	if (fd < 0)
 		return 0xAB38FBE1; // random number be like
@@ -24,7 +24,7 @@ int socket_tcp_init(socket_t *sock) {
 	info->is_connected = 0;
 	info->tosend_len = 0;
 	info->recv_len = 0;
-	info->first_seq = rand32();
+	info->first_seq = tcp_rand32();
 	info->current_seq = info->first_seq;
 	return 0;
 }

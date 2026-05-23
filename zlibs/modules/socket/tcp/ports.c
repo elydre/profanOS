@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <modules/socket.h>
+#include "tcp.h"
 
 static uint8_t bitmap[0xFFFF / 8] = {0};
 
@@ -16,7 +17,7 @@ void tcp_free_port(uint16_t port) {
 }
 
 uint16_t tcp_get_free_port() {
-    uint16_t res = CLT_PORT_START;
+    uint16_t res = CLT_PORT_START + (tcp_rand32() & 0x3FF);
     while (res <= CLT_PORT_END) {
         if (!tcp_is_port_free(res))
             res++;
