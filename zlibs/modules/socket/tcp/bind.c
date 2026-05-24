@@ -8,7 +8,7 @@ int socket_tcp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrl
     tcp_t *data = sock->data;
     if (addrlen != sizeof(struct sockaddr_in))
         return -EINVAL;
-    if (data->is_bound)
+    if (TCP_GET_INFO(data, TCP_BIND_MASK))
         return -EINVAL;
     const struct sockaddr_in *addr2 = (void *)addr;
     if (addr2->sin_family != AF_INET)
@@ -23,6 +23,6 @@ int socket_tcp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrl
     tcp_lock_port(htons(port));
     data->local_ip = addr2->sin_addr.s_addr;
     data->local_port = port;
-    data->is_bound = 1;
+	TCP_SET_INFO(data, TCP_BIND_MASK);
     return 0;
 }

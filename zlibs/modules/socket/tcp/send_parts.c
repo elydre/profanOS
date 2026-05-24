@@ -14,7 +14,10 @@
 #include "../include/ip.h"
 
 static uint16_t get_window(tcp_t *data) {
-	return sizeof(data->recv) - data->recv_len;
+	size_t window = data->recv_max - data->recv_len;
+	if (window > 0xFFFF)
+		return 0xFFFF;
+	return window;
 }
 
 uint16_t tcp_checksum(void *data, int len, uint32_t ip_src, uint32_t ip_dest) {

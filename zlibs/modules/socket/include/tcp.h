@@ -17,6 +17,8 @@
 
 #define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (0 << 16))
 
+#define TCP_DEFAULT_BUFFER 0xFFFF
+
 #define TCP_STATE_CLOSED   0
 #define TCP_STATE_LISTEN   1
 #define TCP_STATE_SYN_SENT 2
@@ -32,31 +34,39 @@
 #define TCP_MAX_SEND_ONCE (1024)
 #define TCP_MIN(A, B) (A < B ? A : B)
 
-typedef struct {
-    uint8_t state;
+#define TCP_BIND_MASK (1 << 0)
+#define TCP_CONNECT_MASK (1 << 1)
+#define TCP_WAIT_ACK_MASK (1 << 2)
 
-    uint16_t local_port;
-    uint16_t remote_port;
-    uint8_t is_bound;
+#define TCP_GET_INFO(X, MASK) ((X)->mask_info & MASK)
+#define TCP_SET_INFO(X, MASK) ((X)->mask_info |= MASK)
+#define TCP_CLEAR_INFO(X, MASK) ((X)->mask_info &= ~MASK)
+
+typedef struct {
+    uint8_t *tosend;
+    uint8_t *recv;
+
+    size_t recv_len;
+    size_t recv_max;
+
+    size_t tosend_len;
+	size_t tosend_max;
 
     uint32_t local_ip;
     uint32_t remote_ip;
-    uint8_t is_connected;
-
-    uint8_t tosend[0xffff];
-    uint16_t tosend_len;
-
-    uint8_t recv[0xffff];
-    uint16_t recv_len;
 
     uint32_t first_seq;
     uint32_t current_seq;
     uint32_t first_ack; // first seq sent by the other side
     uint32_t current_ack;
-
-    uint8_t do_wait_ack;
     uint32_t last_send;
+
+    uint16_t local_port;
+    uint16_t remote_port;
+
+    uint8_t state;
     uint8_t retries;
+	uint8_t mask_info;
  } tcp_t;
 
 typedef struct {

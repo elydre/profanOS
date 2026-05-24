@@ -29,19 +29,19 @@ int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
         return -EINVAL;
     
     tcp_t *data = sock->data;
-    if (data->is_connected)
+    if (TCP_GET_INFO(data, TCP_CONNECT_MASK))
         return -EISCONN;
 
     eth_info_t info;
     eth_get_info(0, &info);
 
 	uint16_t local_port = 0;
-	if (data->is_bound && data->local_ip == 0) {
+	if (TCP_GET_INFO(data, TCP_BIND_MASK) && data->local_ip == 0) {
 		local_port = data->local_port;
-		data->is_bound = 0;
+		TCP_CLEAR_INFO(data, TCP_BIND_MASK);
 	}
 
-    if (!data->is_bound) {
+    if (!TCP_GET_INFO(data, TCP_BIND_MASK)) {
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = info.ip;
@@ -52,7 +52,7 @@ int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
             return err;
     }
 
-    data->is_connected = 1;
+	TCP_SET_INFO(data, TCP_CONNECT_MASK);
     data->remote_port = addr2->sin_port;
     data->remote_ip = addr2->sin_addr.s_addr;
     data->state = TCP_STATE_SYN_SENT;

@@ -28,9 +28,8 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
 				sock->current_ack = packet->seq + 1;
 
                 tcp_send_ack(sock);
-                sock->last_send = 0;
                 sock->retries = 0;
-                sock->do_wait_ack = 0;
+				TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
 
             }
             break;
@@ -49,7 +48,7 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                 }
                 else {
                     // check if data is longer than our buffer-curesnt size (comunisum)
-                    if (!(packet->data_len > (int) sizeof(sock->recv) - sock->recv_len)) {
+                    if (!((size_t)packet->data_len > sock->recv_max - sock->recv_len)) {
                         mem_copy(sock->recv + sock->recv_len, packet->data, packet->data_len);
                         sock->recv_len += packet->data_len;
                         sock->current_ack += packet->data_len;
@@ -75,7 +74,7 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                    mem_move(sock->tosend, sock->tosend + to_remove, sock->tosend_len - to_remove);
                    sock->tosend_len -= to_remove;
 				   sock->retries = 0;
-				   sock->do_wait_ack = 0;
+				   TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
 				   sock->current_seq += to_remove;
                }
            }

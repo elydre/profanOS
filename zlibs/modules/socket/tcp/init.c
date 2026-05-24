@@ -20,11 +20,21 @@ int socket_tcp_init(socket_t *sock) {
 
 	mem_set(info, 0, sizeof(tcp_t));
 	info->state = TCP_STATE_CLOSED;
-	info->is_bound = 0;
-	info->is_connected = 0;
-	info->tosend_len = 0;
-	info->recv_len = 0;
 	info->first_seq = tcp_rand32();
 	info->current_seq = info->first_seq;
+
+	info->tosend = malloc(TCP_DEFAULT_BUFFER);	
+	info->recv = malloc(TCP_DEFAULT_BUFFER);	
+	if (!info->tosend || !info->recv) {
+		free(info->tosend);
+		free(info->recv);
+		free(info);
+		sock->data = NULL;
+		return 1;
+	}
+	info->tosend_len = 0;
+	info->recv_len = 0;
+	info->tosend_max = TCP_DEFAULT_BUFFER;
+	info->recv_max = TCP_DEFAULT_BUFFER;
 	return 0;
 }

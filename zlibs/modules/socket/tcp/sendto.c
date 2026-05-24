@@ -17,11 +17,11 @@ ssize_t socket_tcp_send(socket_t *sock, const uint8_t *buffer, size_t len, int f
 
 	size_t original_len = len;
 	while (len && data->state == TCP_STATE_OPEN) {
-		if (data->tosend_len == sizeof(data->tosend)) {
+		if (data->tosend_len == data->tosend_max) {
 			process_sleep(process_get_pid(), 5);
 			continue;
 		}
-		size_t to_copy = TCP_MIN(sizeof(data->tosend) - data->tosend_len, len);
+		size_t to_copy = TCP_MIN(data->tosend_max - data->tosend_len, len);
 		mem_copy(&data->tosend[data->tosend_len], buffer, to_copy);
 
 		len -= to_copy;

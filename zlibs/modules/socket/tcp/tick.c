@@ -22,21 +22,20 @@ void socket_tcp_tick(tcp_t *sock) {
 
     switch (sock->state) {
         case TCP_STATE_SYN_SENT:
-            if (sock->do_wait_ack && sock->last_send + TCP_TIMEOUT < now) {
+            if (TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK) && sock->last_send + TCP_TIMEOUT < now) {
                 tcp_send_syn(sock);
                 sock->retries++;
             }
             break;
         case TCP_STATE_OPEN:
-            if (sock->do_wait_ack && sock->last_send + TCP_TIMEOUT < now) {
+            if (TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK) && sock->last_send + TCP_TIMEOUT < now) {
                 tcp_send_data(sock);
                 sock->retries++;
             }
-            else if (sock->tosend_len > 0 && !sock->do_wait_ack) {
+            else if (sock->tosend_len > 0 && !TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK)) {
                 tcp_send_data(sock);
                 sock->retries = 0;
-                sock->do_wait_ack = 1;
-
+				TCP_SET_INFO(sock, TCP_WAIT_ACK_MASK);
             }
             // !TODO implement timeout for OPEN§0
             break;
