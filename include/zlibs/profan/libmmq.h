@@ -42,6 +42,8 @@ size_t mmq_strlen(const char *s);
 char  *mmq_strdup(const char *s);
 char  *mmq_strncpy(char *s1, const char *s2, size_t n);
 char  *mmq_strcat(char *s1, const char *s2);
+size_t mmq_strlcpy(char *dst, const char *src, size_t size);
+size_t mmq_strlcat(char *dst, const char *src, size_t size);
 int    mmq_strncmp(const char *s1, const char *s2, size_t n);
 int    mmq_str2int(const char *nptr);
 

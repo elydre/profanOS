@@ -182,6 +182,30 @@ char *mmq_strcat(char *restrict s1, register const char *restrict s2) {
     return s1;
 }
 
+size_t mmq_strlcpy(char *restrict dst, const char *restrict src, size_t size) {
+    size_t i;
+    for (i = 0; src[i] != '\0'; i++) {
+        if (i + 1 < size)
+            dst[i] = src[i];
+    }
+    if (size > 0)
+        dst[i < size ? i : size - 1] = '\0';
+    return i;
+}
+
+size_t mmq_strlcat(char *restrict dst, const char *restrict src, size_t size) {
+    size_t dlen = 0, i;
+    while (dlen < size && dst[dlen] != '\0')
+        dlen++;
+    for (i = 0; src[i] != '\0'; i++) {
+        if (dlen + i + 1 < size)
+            dst[dlen + i] = src[i];
+    }
+    if (size > 0)
+        dst[dlen + i < size ? dlen + i : size - 1] = '\0';
+    return dlen + i;
+}
+
 int mmq_strncmp(register const char *s1, register const char *s2, size_t n) {
     if (n == 0) return 0;
     do {
