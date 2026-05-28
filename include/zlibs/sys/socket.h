@@ -12,8 +12,11 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
+#include <profan/minimal.h>
 #include <stdint.h>
 #include <unistd.h>
+
+_BEGIN_C_FILE
 
 #define AF_UNIX     1
 #define AF_LOCAL    1
@@ -21,6 +24,7 @@
 #define AF_INET6    10
 #define AF_PACKET   17
 #define AF_NETLINK  16
+#define AF_UNSPEC   0
 
 #define SOCK_STREAM     1
 #define SOCK_DGRAM      2
@@ -43,8 +47,19 @@ struct sockaddr {
     char sa_data[14];
 };
 
+struct sockaddr_storage {
+    sa_family_t ss_family;
+    char __ss_padding[128 - sizeof(sa_family_t)]; // TODO check this
+};
 
 #define INADDR_ANY 0
+#define INADDR_LOOPBACK 0x7F000001
+
+#define SOL_SOCKET 1
+#define SO_ERROR 0x1007
+#define SO_REUSEADDR 0x0004
+#define SO_KEEPALIVE 0x0008
+#define SO_TYPE 0x1008
 
 int socket(int domain, int type, int protocol);
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
@@ -53,5 +68,17 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const struct 
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 ssize_t send(int sockfd, const void *buf, size_t len, int flags);
 ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+
+int listen(int sockfd, int backlog);
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+int shutdown(int sockfd, int how);
+int socketpair(int domain, int type, int protocol, int sv[2]);
+
+int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
+int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
+int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+
+_END_C_FILE
 
 #endif

@@ -10,6 +10,7 @@
 \*****************************************************************************/
 
 #include <modules/socket.h>
+#include <profan.h>
 
 #include <sys/socket.h>
 #include <stdio.h>
@@ -89,4 +90,36 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
 
 ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
     return recvfrom(sockfd, buf, len, flags, NULL, NULL);
+}
+
+int listen(int sockfd, int backlog) {
+    return (PROFAN_FNI, -1);
+}
+
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+    return (PROFAN_FNI, -1);
+}
+
+int shutdown(int sockfd, int how) {
+    return (PROFAN_FNI, -1);
+}
+
+int socketpair(int domain, int type, int protocol, int sv[2]) {
+    return (PROFAN_FNI, -1);
+}
+
+int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) {
+    return (PROFAN_FNI, -1);
+}
+
+int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) {
+    return (PROFAN_FNI, -1);
+}
+
+int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+    return (PROFAN_FNI, -1);
+}
+
+int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+    return (PROFAN_FNI, -1);
 }

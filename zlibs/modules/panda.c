@@ -279,8 +279,14 @@ static int compute_ansi_escape(const char *str) {
                 goto UNKNOWN_ESCAPE;
             break;
         case 'm': // set text attributes
-            if (vcount == 0 || private)
+            if (private)
                 goto UNKNOWN_ESCAPE;
+            if (vcount == 0) {
+                g_panda->fg_color = COLOR_STDOUT;
+                g_panda->bg_color = 0x000000;
+                g_panda->decoration = 0;
+                break;
+            }
             if (vcount == 5 && vals[1] == 2) {
                 if (vals[0] == 38)
                     g_panda->fg_color = ((vals[2] & 0xFF) << 16) | ((vals[3] & 0xFF) << 8) | (vals[4] & 0xFF);

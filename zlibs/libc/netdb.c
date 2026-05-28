@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <profan.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <time.h>
@@ -307,4 +308,8 @@ struct hostent *gethostbyname(const char *name) {
     iarr[2] = ip >> 16;
     iarr[3] = ip >> 24;
     return &storage;
+}
+
+struct servent *getservbyname(const char *name, const char *proto) {
+    return (PROFAN_FNI, NULL);
 }
