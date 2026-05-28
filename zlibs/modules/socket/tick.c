@@ -12,7 +12,6 @@
 #include <modules/socket.h>
 #include <kernel/process.h>
 #include <system.h>
-#include <minilib.h>
 
 #include "udp.h"
 #include "ip.h"
