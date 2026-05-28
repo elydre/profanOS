@@ -188,7 +188,7 @@ void set_env(char *line) {
 
 int main(void) {
     runtime_args_t args;
-    int usage_pid;
+    int tmp_pid, usage_pid;
     char key_char;
 
     envp = NULL;
@@ -228,9 +228,6 @@ int main(void) {
         set_env("TERM=/dev/kterm");
     }
 
-/*
-    int tmp_pid;
-
     args = (runtime_args_t){
         .path = "/bin/c/ip-get.elf",
         .wd = NULL,
@@ -242,7 +239,6 @@ int main(void) {
 
     run_ifexist(&args, &tmp_pid);
     syscall_process_info(tmp_pid, PROC_INFO_SET_PPID, 0);
-*/
 
     rainbow_print("Welcome to profanOS!\n");
     print_kernel_version();
