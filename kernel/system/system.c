@@ -112,12 +112,15 @@ void sys_entry_kernel(void) {
 }
 
 void sys_exit_kernel(int restore_pic) {
+    if (!IN_KERNEL)
+        sys_fatal("Already in user mode");
+
+    schedule_if_needed();
+
     asm volatile("cli");
 
     if (!IN_KERNEL)
         sys_fatal("Already in user mode");
-
-    // schedule_if_needed();
 
     g_in_kernel_total += TIMER_TICKS - g_last_entry;
 
