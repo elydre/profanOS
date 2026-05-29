@@ -13,6 +13,7 @@
 #include <kernel/butterfly.h>
 #include <kernel/process.h>
 #include <kernel/tinyelf.h>
+#include <drivers/pci.h>
 #include <cpu/timer.h>
 #include <cpu/ports.h>
 #include <gui/gnrtx.h>
@@ -101,11 +102,13 @@ void sys_entry_kernel(void) {
 
     g_last_entry = TIMER_TICKS;
 
-    /* // enable interrupts but with only IRQ0 (timer)
+    // enable interrupts but with only IRQ0 (timer)
     port_write8(0x21, 0xFE);
     port_write8(0xA1, 0xFF);
 
-    asm volatile("sti");*/
+    msi_stop_interrupts();
+
+    asm volatile("sti");
 }
 
 void sys_exit_kernel(int restore_pic) {
@@ -115,8 +118,6 @@ void sys_exit_kernel(int restore_pic) {
         sys_fatal("Already in user mode");
 
     // schedule_if_needed();
-
-    IN_KERNEL = 0;
 
     g_in_kernel_total += TIMER_TICKS - g_last_entry;
 
@@ -130,6 +131,9 @@ void sys_exit_kernel(int restore_pic) {
             port_write8(0xA0, 0x20);
         port_write8(0x20, 0x20);
     }
+
+    msi_restore_interrupts();
+    IN_KERNEL = 0;
 
     asm volatile("sti");
 }

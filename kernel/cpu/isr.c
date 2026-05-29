@@ -126,9 +126,10 @@ void isr_handler(registers_t *r) {
 void irq_handler(registers_t *r) {
     if (r->int_no == 32) {
         TIMER_TICKS++;
-        /*port_write8(0x20, 0x20);
+        port_write8(0x20, 0x20);
         if (IN_KERNEL)
-            return;*/
+            return;
+        // we have to trigger scheduler
     }
 
     sys_entry_kernel();
@@ -138,7 +139,7 @@ void irq_handler(registers_t *r) {
     if (handler != NULL)
         handler(r);
 
-    sys_exit_kernel(/*r->int_no == 32 || */r->int_no == 32 + 28 ? -1 : (int) r->int_no);
+    sys_exit_kernel((r->int_no == 32 || r->int_no == 32 + 28) ? -1 : (int) r->int_no);
 }
 
 void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
@@ -146,12 +147,11 @@ void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
 }
 
 int irq_install(void) {
-    /* // durring the kernel only IRQ0 is enabled (timer)
+    // durring the kernel only IRQ0 is enabled (timer)
     port_write8(0x21, 0xFE);
     port_write8(0xA1, 0xFF);
 
-    asm volatile("sti");*/
-    asm volatile("cli");
+    asm volatile("sti");
 
     return 0;
 }

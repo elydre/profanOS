@@ -270,7 +270,7 @@ int init_lapic(void) {
     return 0;
 }
 
-uint32_t pci_try_enable_msi(pci_device_t *pci) {
+uint32_t pci_enable_msi(pci_device_t *pci) {
     /*volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
 
     uint32_t svr = lapic[0xF0 / 4];
@@ -325,7 +325,7 @@ void msi_stop_interrupts(void) {
     lapic[0xF0 / 4] = svr;
 }
 
-void msi_resume_interrupts(void) {
+void msi_restore_interrupts(void) {
     if (!msi_enabled)
         return;
 
