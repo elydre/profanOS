@@ -9,13 +9,13 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <ktype.h>
-#include <drivers/pci.h>
-#include <minilib.h>
-#include <cpu/ports.h>
 #include <kernel/scubasuit.h>
+#include <drivers/pci.h>
+#include <cpu/ports.h>
+#include <minilib.h>
+#include <ktype.h>
 
-#define PCI_CAP_ID_MSI 0x05
+#define PCI_CAP_ID_MSI     0x05
 #define IA32_APIC_BASE_MSR 0x1B
 #define LAPIC_DEFAULT_BASE 0xFEE00000
 
@@ -99,9 +99,9 @@ static void pci_get_class(pci_device_t *pci) {
     uint16_t upper_word = pci_read_config(pci, 0x0A); // Bits 31-16
     uint16_t lower_word = pci_read_config(pci, 0x08); // Bits 15-0
 
-    uint32_t class_info = ((uint32_t)upper_word << 16) | lower_word; // Combine en un uint32_t
+    uint32_t class_info = ((uint32_t)upper_word << 16) | lower_word;
 
-    pci->class_id = (class_info >> 24) & 0xFF;       // Bits 31-2`4
+    pci->class_id = (class_info >> 24) & 0xFF;
 
     uint16_t class_code = pci_read_config(pci, 0x08);
     pci->subclass_id = (class_code >> 8) & 0xFF;
@@ -138,9 +138,8 @@ void pci_write_cmd_u8(pci_device_t *pci, uint8_t barN, uint32_t offset, uint8_t 
         volatile uint8_t *mem_addr = (volatile uint8_t *)(bar_base + offset);
         *mem_addr = value;
     } else {
-        // Si le BAR est de type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        port_write8(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
+        port_write8(io_port, value);
     }
 }
 
@@ -152,9 +151,8 @@ void pci_write_cmd_u16(pci_device_t *pci, uint8_t barN, uint32_t offset, uint16_
         volatile uint16_t *mem_addr = (volatile uint16_t *)(bar_base + offset);
         *mem_addr = value;
     } else {
-        // Si le BAR est de type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        port_write16(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
+        port_write16(io_port, value);
     }
 }
 
@@ -166,9 +164,8 @@ void pci_write_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset, uint32_
         volatile uint32_t *mem_addr = (volatile uint32_t *)(bar_base + offset);
         *mem_addr = value;
     } else {
-        // Si le BAR est de type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        port_write32(io_port, value); // Assurez-vous que `outb` est implémentée ou disponible
+        port_write32(io_port, value);
     }
 }
 
@@ -179,9 +176,8 @@ uint8_t pci_read_cmd_u8(pci_device_t *pci, uint8_t barN, uint32_t offset) {
         scuba_call_map((void *)(bar_base + offset), (void *)(bar_base + offset), 0);
         return *(volatile uint8_t *)(bar_base + offset);
     } else {
-        // Si le BAR est  type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        return port_read8(io_port); // Assurez-vous que `outb` est implémentée ou disponible
+        return port_read8(io_port);
     }
 }
 
@@ -192,9 +188,8 @@ uint16_t pci_read_cmd_u16(pci_device_t *pci, uint8_t barN, uint32_t offset) {
         scuba_call_map((void *)(bar_base + offset), (void *)(bar_base + offset), 0);
         return *(volatile uint16_t *)(bar_base + offset);
     } else {
-        // Si le BAR est  type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        return port_read16(io_port); // Assurez-vous que `outb` est implémentée ou disponible
+        return port_read16(io_port);
     }
 }
 
@@ -205,9 +200,8 @@ uint32_t pci_read_cmd_u32(pci_device_t *pci, uint8_t barN, uint32_t offset) {
         scuba_call_map((void *)(bar_base + offset), (void *)(bar_base + offset), 0);
         return *(volatile uint32_t *)(bar_base + offset);
     } else {
-        // Si le BAR est  type E/S
         uint16_t io_port = (uint16_t)(bar_base + offset);
-        return port_read32(io_port); // Assurez-vous que `outb` est implémentée ou disponible
+        return port_read32(io_port);
     }
 }
 
@@ -241,25 +235,15 @@ void pci_enable_bus_master(pci_device_t *pci) {
 
 // static volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
 
-void rdmsr(uint32_t msr, uint32_t *value_high, uint32_t *value_low) {
+static inline void rdmsr(uint32_t msr, uint32_t *value_high, uint32_t *value_low) {
     __asm__ volatile ("rdmsr" : "=d"(*value_high), "=a"(*value_low) : "c"(msr));
 }
 
-void wrmsr(uint32_t msr, uint32_t value_low, uint32_t value_high) {
+static inline void wrmsr(uint32_t msr, uint32_t value_low, uint32_t value_high) {
     __asm__ volatile ("wrmsr" : : "a"(value_low), "d"(value_high), "c"(msr));
 }
 
-static void lapic_enable() {
-    uint32_t apic_base_low;
-    uint32_t apic_base_high;
-    rdmsr(IA32_APIC_BASE_MSR, &apic_base_high, &apic_base_low);
-
-    apic_base_low |= (1ULL << 11);
-
-    wrmsr(IA32_APIC_BASE_MSR, apic_base_low, apic_base_high);
-}
-
-int cpu_has_lapic() {
+static int cpu_has_lapic() {
     uint32_t eax, ebx, ecx, edx;
     __asm__ volatile ("cpuid"
                       : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
@@ -268,19 +252,33 @@ int cpu_has_lapic() {
 }
 
 static uint32_t next_int_no = 32 + 28;
+static int msi_enabled = 0;
+
+int init_lapic(void) {
+    uint32_t apic_base_low, apic_base_high;
+
+    if (!cpu_has_lapic())
+        return 2; // no LAPIC, PASS
+
+    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
+
+    rdmsr(IA32_APIC_BASE_MSR, &apic_base_high, &apic_base_low);
+    apic_base_low |= (1ULL << 11);
+    wrmsr(IA32_APIC_BASE_MSR, apic_base_low, apic_base_high);
+
+    msi_enabled = 1;
+    return 0;
+}
 
 uint32_t pci_try_enable_msi(pci_device_t *pci) {
-    if (!cpu_has_lapic()) {
-        kprintf("RET DEBUG 1\n");
-        return 0; // No LAPIC, cannot use MSI
-    }
-    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
-    lapic_enable();
-    volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
+    /*volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
 
     uint32_t svr = lapic[0xF0 / 4];
     svr |= 0x100; // APIC Software Enable
-    lapic[0xF0 / 4] = svr;
+    lapic[0xF0 / 4] = svr;*/
+
+    if (!msi_enabled)
+        return -1; // MSI not supported
 
     uint32_t val = pci_read_config(pci, 0x34);
     uint8_t cap_ptr = val & 0xFF;
@@ -293,18 +291,15 @@ uint32_t pci_try_enable_msi(pci_device_t *pci) {
         cap_ptr = (cap_hdr >> 8) & 0xFF;
     }
 
-    if (cap_ptr == 0) {
-        kprintf("No MSI capability\n");
-        return 0;
-    }
+    if (cap_ptr == 0)
+        return -1; // no MSI capability
 
     uint16_t msi_ctrl = pci_read_config_u16(pci, cap_ptr + 2);
     int has_64bit = (msi_ctrl >> 7) & 1;
 
-    uint32_t lapic_addr = LAPIC_DEFAULT_BASE;
     uint32_t data = (next_int_no & 0xFF) | (0 << 8);  // delivery mode = fixed (000), vector = next_int_no
 
-    pci_write_config(pci, cap_ptr + 4, lapic_addr);
+    pci_write_config(pci, cap_ptr + 4, LAPIC_DEFAULT_BASE);
     if (has_64bit) {
         pci_write_config(pci, cap_ptr + 8, 0x0);
         pci_write_config(pci, cap_ptr + 12, data);
@@ -318,8 +313,36 @@ uint32_t pci_try_enable_msi(pci_device_t *pci) {
     return next_int_no++;
 }
 
-void pci_msi_eoi(void) {
+void msi_stop_interrupts(void) {
+    if (!msi_enabled)
+        return;
+
     scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
     volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
+    
+    uint32_t svr = lapic[0xF0 / 4];
+    svr &= ~0x100; // APIC Software Disable
+    lapic[0xF0 / 4] = svr;
+}
+
+void msi_resume_interrupts(void) {
+    if (!msi_enabled)
+        return;
+
+    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
+    volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
+    
+    uint32_t svr = lapic[0xF0 / 4];
+    svr |= 0x100; // APIC Software Enable
+    lapic[0xF0 / 4] = svr;
+}
+
+void msi_eoi(void) {
+    if (!msi_enabled)
+        return;
+
+    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
+    volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
+    
     lapic[0xB0 / 4] = 0; // Write to EOI register
 }

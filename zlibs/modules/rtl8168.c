@@ -292,7 +292,7 @@ void rtl8169_irq(registers_t *regs) {
     }
 
     RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF);
-    pci_msi_eoi();
+    msi_eoi();
 }
 
 int rtl8169_send(const void *buffer, uint16_t size) {
@@ -494,8 +494,8 @@ int __init(void) {
     LOG("[DEBUG] MAC: %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     // Register IRQ handler
-    uint32_t irq = pci_try_enable_msi(device);
-    if (irq == 0) {
+    int irq = pci_try_enable_msi(device);
+    if (irq < 0) {
         LOG("[ERR] Failed to enable MSI for RTL8169\n");
         return 1;
     }

@@ -60,6 +60,7 @@ void kernel_main(void *mboot_ptr) {
     status_print(keyboard_init, "Setting up PS/2 keyboard");
     status_print(rtc_init,      "Initializing real-time clock");
 
+    status_print(init_lapic,    "Initializing local APIC");
     status_print(pci_init,      "Setting up PCI subsystem");
 
     kprintf("------ Kernel finished booting in %d ms\n", timer_get_ms());
