@@ -86,6 +86,10 @@ int isr_install(void) {
     set_idt_gate(47, irq15);    // Secondary ATA hard disk
 
     set_idt_gate(60, irq28);    // user defined MSI 1
+    set_idt_gate(61, irq29);    // user defined MSI 2
+    set_idt_gate(62, irq30);    // user defined MSI 3
+    set_idt_gate(63, irq31);    // user defined MSI 4
+    set_idt_gate(64, irq32);    // user defined MSI 5
 
     // install the syscall interrupt
     set_idt_gate(128, isr128);

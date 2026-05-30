@@ -124,8 +124,12 @@ global irq12
 global irq13
 global irq14
 global irq15
-global irq28
 
+global irq28
+global irq29
+global irq30
+global irq31
+global irq32
 
 ; 0: Divide By Zero Exception
 isr0:
@@ -404,4 +408,25 @@ irq15:
 irq28:
     push byte 28
     push byte 60
+    jmp irq_common_stub
+
+; User defined MSI interrupts
+irq29:
+    push byte 29
+    push byte 61
+    jmp irq_common_stub
+
+irq30:
+    push byte 30
+    push byte 62
+    jmp irq_common_stub
+
+irq31:
+    push byte 31
+    push byte 63
+    jmp irq_common_stub
+
+irq32:
+    push byte 32
+    push byte 64
     jmp irq_common_stub

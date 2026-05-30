@@ -68,6 +68,10 @@ extern void irq14(void);
 extern void irq15(void);
 
 extern void irq28(void);
+extern void irq29(void);
+extern void irq30(void);
+extern void irq31(void);
+extern void irq32(void);
 
 #define IRQ0 32
 #define IRQ1 33
