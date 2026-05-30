@@ -55,8 +55,6 @@ pci_device_t *pci_find_array(pci_findme_t *ids, int count);
 void     pci_enable_bus_master(pci_device_t *pci);
 uint32_t pci_enable_msi(pci_device_t *pci);
 
-void msi_stop_interrupts(void);
-void msi_restore_interrupts(void);
 void msi_eoi(void);
 
 int pci_init(void);

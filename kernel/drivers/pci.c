@@ -313,30 +313,6 @@ uint32_t pci_enable_msi(pci_device_t *pci) {
     return next_int_no++;
 }
 
-void msi_stop_interrupts(void) {
-    if (!msi_enabled)
-        return;
-
-    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
-    volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
-    
-    uint32_t svr = lapic[0xF0 / 4];
-    svr &= ~0x100; // APIC Software Disable
-    lapic[0xF0 / 4] = svr;
-}
-
-void msi_restore_interrupts(void) {
-    if (!msi_enabled)
-        return;
-
-    scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
-    volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
-    
-    uint32_t svr = lapic[0xF0 / 4];
-    svr |= 0x100; // APIC Software Enable
-    lapic[0xF0 / 4] = svr;
-}
-
 void msi_eoi(void) {
     if (!msi_enabled)
         return;

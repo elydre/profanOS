@@ -106,16 +106,37 @@ void sys_entry_kernel(void) {
     port_write8(0x21, 0xFE);
     port_write8(0xA1, 0xFF);
 
-    msi_stop_interrupts();
-
     asm volatile("sti");
 }
+
+extern struct {
+    int used;
+    registers_t r;
+} msi_queue[5];
+
+void irq_handler(registers_t *r);
+extern interrupt_handler_t interrupt_handlers[256];
 
 void sys_exit_kernel(int restore_pic) {
     if (!IN_KERNEL)
         sys_fatal("Already in user mode");
 
-    schedule_if_needed();
+    // handle pending MSI interrupts
+    for (int i = 0; i < 5; i++) {
+        if (!msi_queue[i].used)
+            continue;
+
+        kprintf("h %d\n", msi_queue[i].r.int_no);
+        msi_queue[i].used = 0;
+    
+        interrupt_handler_t handler = interrupt_handlers[msi_queue[i].r.int_no];
+
+        if (handler != NULL)
+            handler(&msi_queue[i].r);
+
+        if (msi_queue[i].used)
+            sys_fatal("MSI %d interrupt was requeued during handling", i + 1);
+    }
 
     asm volatile("cli");
 
@@ -135,9 +156,7 @@ void sys_exit_kernel(int restore_pic) {
         port_write8(0x20, 0x20);
     }
 
-    msi_restore_interrupts();
     IN_KERNEL = 0;
-
     asm volatile("sti");
 }
 

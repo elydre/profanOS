@@ -68,24 +68,24 @@ int isr_install(void) {
     port_write8(0xA1, 0x0);
 
     // install the IRQs
-    set_idt_gate(32, irq0);
-    set_idt_gate(33, irq1);
-    set_idt_gate(34, irq2);
-    set_idt_gate(35, irq3);
-    set_idt_gate(36, irq4);
-    set_idt_gate(37, irq5);
-    set_idt_gate(38, irq6);
-    set_idt_gate(39, irq7);
-    set_idt_gate(40, irq8);
-    set_idt_gate(41, irq9);
-    set_idt_gate(42, irq10);
-    set_idt_gate(43, irq11);
-    set_idt_gate(44, irq12);
-    set_idt_gate(45, irq13);
-    set_idt_gate(46, irq14);
-    set_idt_gate(47, irq15);
+    set_idt_gate(32, irq0);     // timer
+    set_idt_gate(33, irq1);     // keyboard
+    set_idt_gate(34, irq2);     // cascade
+    set_idt_gate(35, irq3);     // COM2
+    set_idt_gate(36, irq4);     // COM1
+    set_idt_gate(37, irq5);     // LPT2
+    set_idt_gate(38, irq6);     // floppy disk
+    set_idt_gate(39, irq7);     // LPT1
+    set_idt_gate(40, irq8);     // CMOS real-time clock
+    set_idt_gate(41, irq9);     // free for peripherals / legacy SCSI / NIC
+    set_idt_gate(42, irq10);    // free for peripherals / SCSI / NIC
+    set_idt_gate(43, irq11);    // free for peripherals / SCSI / NIC
+    set_idt_gate(44, irq12);    // PS2 mouse
+    set_idt_gate(45, irq13);    // FPU / Coprocessor / Inter-processor
+    set_idt_gate(46, irq14);    // Primary ATA hard disk
+    set_idt_gate(47, irq15);    // Secondary ATA hard disk
 
-    set_idt_gate(60, irq28);
+    set_idt_gate(60, irq28);    // user defined MSI 1
 
     // install the syscall interrupt
     set_idt_gate(128, isr128);
@@ -123,14 +123,37 @@ void isr_handler(registers_t *r) {
         sys_exit_kernel(0);
 }
 
+
+struct {
+    int used;
+    registers_t r;
+} msi_queue[5];
+
 void irq_handler(registers_t *r) {
+    asm volatile("cli");
+
+    if (IN_KERNEL && r->int_no >= 60 && r->int_no <= 64) {
+        int msi_index = r->int_no - 60;
+        kprintf("r %d\n", r->int_no);
+        if (msi_queue[msi_index].used)
+            sys_fatal("MSI %d interrupt already in queue", msi_index + 1);
+        msi_queue[msi_index].used = 1;
+        mem_copy(&msi_queue[msi_index].r, r, sizeof(registers_t));
+        asm volatile("sti");
+        return;
+    }
+
     if (r->int_no == 32) {
         TIMER_TICKS++;
         port_write8(0x20, 0x20);
-        if (IN_KERNEL)
+        if (IN_KERNEL) {
+            asm volatile("sti");
             return;
+        }
         // we have to trigger scheduler
     }
+
+    asm volatile("sti");
 
     sys_entry_kernel();
 
@@ -147,6 +170,9 @@ void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
 }
 
 int irq_install(void) {
+    for (int i = 0; i < 5; i++)
+        msi_queue[i].used = 0;
+
     // durring the kernel only IRQ0 is enabled (timer)
     port_write8(0x21, 0xFE);
     port_write8(0xA1, 0xFF);
