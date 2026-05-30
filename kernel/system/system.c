@@ -126,7 +126,6 @@ void sys_exit_kernel(int restore_pic) {
         if (!msi_queue[i].used)
             continue;
 
-        kprintf("h %d\n", msi_queue[i].r.int_no);
         msi_queue[i].used = 0;
     
         interrupt_handler_t handler = interrupt_handlers[msi_queue[i].r.int_no];
@@ -134,9 +133,10 @@ void sys_exit_kernel(int restore_pic) {
         if (handler != NULL)
             handler(&msi_queue[i].r);
 
-        if (msi_queue[i].used)
-            sys_fatal("MSI %d interrupt was requeued during handling", i + 1);
+        msi_eoi();
     }
+
+    schedule_if_needed();
 
     asm volatile("cli");
 
@@ -150,7 +150,9 @@ void sys_exit_kernel(int restore_pic) {
     port_write8(0xA1, 0x00);
 
     // restore pic if needed
-    if (restore_pic != -1) {
+    if (IRQ_IS_MSI(restore_pic)) {
+        msi_eoi();
+    } else if (restore_pic != -1) {
         if (restore_pic >= 40)
             port_write8(0xA0, 0x20);
         port_write8(0x20, 0x20);

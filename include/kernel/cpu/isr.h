@@ -90,6 +90,14 @@ extern void irq32(void);
 #define IRQ14 46
 #define IRQ15 47
 
+#define IRQ28 60
+#define IRQ29 61
+#define IRQ30 62
+#define IRQ31 63
+#define IRQ32 64
+
+#define IRQ_IS_MSI(n) ((n) >= 60 && (n) <= 64)
+
 /* Struct which aggregates many registers.
  * It matches exactly the pushes on interrupt.asm. From the bottom:
  * - Pushed by the processor automatically

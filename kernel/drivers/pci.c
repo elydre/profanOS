@@ -254,7 +254,7 @@ static int cpu_has_lapic() {
 static uint32_t next_int_no = 32 + 28;
 static int msi_enabled = 0;
 
-int init_lapic(void) {
+int lapic_init(void) {
     uint32_t apic_base_low, apic_base_high;
 
     if (!cpu_has_lapic())

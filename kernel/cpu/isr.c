@@ -134,30 +134,24 @@ struct {
 } msi_queue[5];
 
 void irq_handler(registers_t *r) {
-    asm volatile("cli");
-
-    if (IN_KERNEL && r->int_no >= 60 && r->int_no <= 64) {
+    if (IN_KERNEL && IRQ_IS_MSI(r->int_no)) {
         int msi_index = r->int_no - 60;
-        kprintf("r %d\n", r->int_no);
+
         if (msi_queue[msi_index].used)
             sys_fatal("MSI %d interrupt already in queue", msi_index + 1);
+
         msi_queue[msi_index].used = 1;
         mem_copy(&msi_queue[msi_index].r, r, sizeof(registers_t));
-        asm volatile("sti");
         return;
     }
 
     if (r->int_no == 32) {
         TIMER_TICKS++;
         port_write8(0x20, 0x20);
-        if (IN_KERNEL) {
-            asm volatile("sti");
+        if (IN_KERNEL)
             return;
-        }
         // we have to trigger scheduler
     }
-
-    asm volatile("sti");
 
     sys_entry_kernel();
 
@@ -166,7 +160,7 @@ void irq_handler(registers_t *r) {
     if (handler != NULL)
         handler(r);
 
-    sys_exit_kernel((r->int_no == 32 || r->int_no == 32 + 28) ? -1 : (int) r->int_no);
+    sys_exit_kernel(r->int_no == 32 ? -1 : (int) r->int_no);
 }
 
 void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {

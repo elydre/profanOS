@@ -58,6 +58,6 @@ uint32_t pci_enable_msi(pci_device_t *pci);
 void msi_eoi(void);
 
 int pci_init(void);
-int init_lapic(void);
+int lapic_init(void);
 
 #endif

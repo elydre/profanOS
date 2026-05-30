@@ -292,7 +292,6 @@ void rtl8169_irq(registers_t *regs) {
     }
 
     RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF);
-    msi_eoi();
 }
 
 int rtl8169_send(const void *buffer, uint16_t size) {
