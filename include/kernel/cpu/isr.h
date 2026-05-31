@@ -73,16 +73,16 @@ extern void irq30(void);
 extern void irq31(void);
 extern void irq32(void);
 
-#define IRQ0 32
-#define IRQ1 33
-#define IRQ2 34
-#define IRQ3 35
-#define IRQ4 36
-#define IRQ5 37
-#define IRQ6 38
-#define IRQ7 39
-#define IRQ8 40
-#define IRQ9 41
+#define IRQ0  32
+#define IRQ1  33
+#define IRQ2  34
+#define IRQ3  35
+#define IRQ4  36
+#define IRQ5  37
+#define IRQ6  38
+#define IRQ7  39
+#define IRQ8  40
+#define IRQ9  41
 #define IRQ10 42
 #define IRQ11 43
 #define IRQ12 44
@@ -96,7 +96,10 @@ extern void irq32(void);
 #define IRQ31 63
 #define IRQ32 64
 
-#define IRQ_IS_MSI(n) ((n) >= 60 && (n) <= 64)
+#define IRQ_MSI_BASE IRQ28
+#define IRQ_MSI_COUNT 5
+
+#define IRQ_IS_MSI(n) ((n) >= IRQ_MSI_BASE && (n) < IRQ_MSI_BASE + IRQ_MSI_COUNT)
 
 /* Struct which aggregates many registers.
  * It matches exactly the pushes on interrupt.asm. From the bottom:
@@ -106,14 +109,14 @@ extern void irq32(void);
  * - `push eax` whose lower 16-bits contain DS */
 
 typedef struct {
-   uint32_t ds;                                          // Data segment selector
-   uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;      // Pushed by pusha.
-   uint32_t int_no, err_code;                            // Interrupt number and error code (if applicable)
-   uint32_t eip, cs, eflags, useresp, ss;                // Pushed by the processor automatically.
+   uint32_t ds;                                     // data segment selector
+   uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; // pushed by pusha.
+   uint32_t int_no, err_code;                       // interrupt number and error code (if applicable)
+   uint32_t eip, cs, eflags, useresp, ss;           // pushed by the processor automatically.
 } registers_t;
 
 typedef struct {
-    int is_used;
+    int intno;
     registers_t r;
 } msi_queue_t;
 

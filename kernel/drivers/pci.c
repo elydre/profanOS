@@ -123,6 +123,7 @@ int pci_init(void) {
                 pci_get_class(&pci);
                 pci.interrupt_line = pci_read_config(&pci, 0x3C) & 0xFF;
                 pci.interrupt_pin = pci_read_config(&pci, 0x3D) & 0xFF;
+                pci.msi_intno = -1;
                 pci_add_device(&pci);
             }
         }
@@ -232,8 +233,9 @@ void pci_enable_bus_master(pci_device_t *pci) {
     pci_write_config(pci, 0x04, cmd);
 }
 
+// lapic and MSI related functions
 
-// static volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
+char msi_used[IRQ_MSI_COUNT] = {0};
 
 static inline void rdmsr(uint32_t msr, uint32_t *value_high, uint32_t *value_low) {
     __asm__ volatile ("rdmsr" : "=d"(*value_high), "=a"(*value_low) : "c"(msr));
@@ -251,8 +253,7 @@ static int cpu_has_lapic() {
     return (edx & (1 << 9)) != 0;
 }
 
-static uint32_t next_int_no = 32 + 28;
-static int msi_enabled = 0;
+int msi_enabled = 0;
 
 int lapic_init(void) {
     uint32_t apic_base_low, apic_base_high;
@@ -267,18 +268,64 @@ int lapic_init(void) {
     wrmsr(IA32_APIC_BASE_MSR, apic_base_low, apic_base_high);
 
     msi_enabled = 1;
+
     return 0;
 }
 
-uint32_t pci_enable_msi(pci_device_t *pci) {
-    /*volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
-
-    uint32_t svr = lapic[0xF0 / 4];
-    svr |= 0x100; // APIC Software Enable
-    lapic[0xF0 / 4] = svr;*/
-
-    if (!msi_enabled)
+int pci_enable_msi(pci_device_t *pci) {
+    if (msi_enabled == 0)
         return -1; // MSI not supported
+
+    if (pci->msi_intno != -1)
+        return pci->msi_intno; // already enabled
+
+    uint32_t val = pci_read_config(pci, 0x34);
+    uint8_t cap_ptr = val & 0xFF;
+
+    while (cap_ptr != 0) {
+        uint32_t cap_hdr = pci_read_config(pci, cap_ptr);
+        uint8_t cap_id = cap_hdr & 0xFF;
+        if (cap_id == PCI_CAP_ID_MSI)
+            break;
+        cap_ptr = (cap_hdr >> 8) & 0xFF;
+    }
+
+    if (cap_ptr == 0)
+        return -1; // no MSI capability
+
+    for (int i = 0; i < IRQ_MSI_COUNT; i++) {
+        if (msi_used[i])
+            continue;
+        msi_used[i] = 1;
+        pci->msi_intno = IRQ_MSI_BASE + i;
+        break;
+    }
+
+    if (pci->msi_intno == -1)
+        return -1; // no available MSI slots
+
+    uint16_t msi_ctrl = pci_read_config_u16(pci, cap_ptr + 2);
+    int has_64bit = (msi_ctrl >> 7) & 1;
+
+    uint32_t data = (pci->msi_intno & 0xFF) | (0 << 8);  // delivery mode = fixed (000), vector = msi_intno
+
+    pci_write_config(pci, cap_ptr + 4, LAPIC_DEFAULT_BASE);
+    if (has_64bit) {
+        pci_write_config(pci, cap_ptr + 8, 0x0);
+        pci_write_config(pci, cap_ptr + 12, data);
+    } else {
+        pci_write_config(pci, cap_ptr + 8, data);
+    }
+
+    msi_ctrl |= 0x1; // Enable MSI
+    pci_write_config_u16(pci, cap_ptr + 2, msi_ctrl);
+
+    return pci->msi_intno;
+}
+
+int pci_disable_msi(pci_device_t *pci) {
+    if (pci->msi_intno == -1)
+        return 0; // MSI not enabled
 
     uint32_t val = pci_read_config(pci, 0x34);
     uint8_t cap_ptr = val & 0xFF;
@@ -295,27 +342,20 @@ uint32_t pci_enable_msi(pci_device_t *pci) {
         return -1; // no MSI capability
 
     uint16_t msi_ctrl = pci_read_config_u16(pci, cap_ptr + 2);
-    int has_64bit = (msi_ctrl >> 7) & 1;
-
-    uint32_t data = (next_int_no & 0xFF) | (0 << 8);  // delivery mode = fixed (000), vector = next_int_no
-
-    pci_write_config(pci, cap_ptr + 4, LAPIC_DEFAULT_BASE);
-    if (has_64bit) {
-        pci_write_config(pci, cap_ptr + 8, 0x0);
-        pci_write_config(pci, cap_ptr + 12, data);
-    } else {
-        pci_write_config(pci, cap_ptr + 8, data);
-    }
-
-    msi_ctrl |= 0x1; // Enable MSI
+    msi_ctrl &= ~0x1; // Disable MSI
     pci_write_config_u16(pci, cap_ptr + 2, msi_ctrl);
 
-    return next_int_no++;
+    if (IRQ_IS_MSI(pci->msi_intno)) // should always be true
+        msi_used[pci->msi_intno - IRQ_MSI_BASE] = 0;
+
+    pci->msi_intno = -1;
+
+    return 0;
 }
 
-void msi_eoi(void) {
-    if (!msi_enabled)
-        return;
+void lapic_eoi(void) {
+    if (msi_enabled == 0)
+        return; // MSI not supported
 
     scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
     volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;

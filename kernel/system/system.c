@@ -114,18 +114,49 @@ void sys_exit_kernel(int restore_pic) {
         sys_fatal("Already in user mode");
 
     // handle pending MSI interrupts
-    for (int i = 0; i < 5; i++) {
-        if (!msi_queue[i].is_used)
+    /* for (int i = 0; i < 5; i++) {
+        if (!msi_queue[i].received)
             continue;
 
-        msi_queue[i].is_used = 0;
+        msi_queue[i].received = 0;
     
         interrupt_handler_t handler = interrupt_handlers[msi_queue[i].r.int_no];
 
         if (handler != NULL)
             handler(&msi_queue[i].r);
 
-        msi_eoi();
+        lapic_eoi();
+    }*/
+    int msi_queue_len = 0;
+    for (int i = 0; i < 5; i++) {
+        if (msi_queue[i].intno == -1)
+            break;
+        msi_queue_len++;
+    }
+
+    if (msi_queue_len) {
+        for (int i = msi_queue_len - 1; i >= 0; i--) {
+            interrupt_handler_t handler = interrupt_handlers[msi_queue[i].r.int_no];
+
+            if (handler != NULL)
+                handler(&msi_queue[i].r);
+
+            lapic_eoi();
+            msi_queue[i].intno = -1;
+        }
+
+        asm volatile("cli");
+        msi_queue_len = 0;
+        for (int i = 0; i < 5; i++) {
+            if (msi_queue[i].intno == -1)
+                continue;
+            mem_copy(&msi_queue[msi_queue_len].r, &msi_queue[i].r, sizeof(registers_t));
+            kprintf("Moved interrupt %d from queue index %d to %d\n", msi_queue[i].intno, i, msi_queue_len);
+            msi_queue[msi_queue_len].intno = msi_queue[i].intno;
+            msi_queue[i].intno = -1;
+            msi_queue_len++;
+        }
+        asm volatile("sti");
     }
 
     schedule_if_needed();
@@ -143,7 +174,7 @@ void sys_exit_kernel(int restore_pic) {
 
     // restore pic if needed
     if (IRQ_IS_MSI(restore_pic)) {
-        msi_eoi();
+        lapic_eoi();
     } else if (restore_pic != -1) {
         if (restore_pic >= 40)
             port_write8(0xA0, 0x20);

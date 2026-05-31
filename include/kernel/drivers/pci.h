@@ -15,6 +15,7 @@
 #include <ktype.h>
 
 typedef struct {
+    // PCI configuration
     int vendor_id;
     int device_id;
     int bus;
@@ -27,6 +28,9 @@ typedef struct {
     uint8_t prog_if;
     uint8_t interrupt_line;
     uint8_t interrupt_pin;
+
+    // internal fields
+    int msi_intno; // if MSI enabled, the assigned interrupt number    
 } pci_device_t;
 
 typedef struct {
@@ -53,9 +57,9 @@ pci_device_t *pci_find(uint16_t vendor, uint16_t device);
 pci_device_t *pci_find_array(pci_findme_t *ids, int count);
 
 void     pci_enable_bus_master(pci_device_t *pci);
-uint32_t pci_enable_msi(pci_device_t *pci);
+int      pci_enable_msi(pci_device_t *pci);
 
-void msi_eoi(void);
+void lapic_eoi(void);
 
 int pci_init(void);
 int lapic_init(void);
