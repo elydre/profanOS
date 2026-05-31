@@ -112,7 +112,15 @@ typedef struct {
    uint32_t eip, cs, eflags, useresp, ss;                // Pushed by the processor automatically.
 } registers_t;
 
+typedef struct {
+    int is_used;
+    registers_t r;
+} msi_queue_t;
+
 typedef void (*interrupt_handler_t)(registers_t*);
+
+extern interrupt_handler_t interrupt_handlers[256];
+extern msi_queue_t msi_queue[5];
 
 int isr_install(void);
 int irq_install(void);

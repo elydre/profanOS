@@ -127,20 +127,16 @@ void isr_handler(registers_t *r) {
         sys_exit_kernel(0);
 }
 
-
-struct {
-    int used;
-    registers_t r;
-} msi_queue[5];
+msi_queue_t msi_queue[5];
 
 void irq_handler(registers_t *r) {
     if (IN_KERNEL && IRQ_IS_MSI(r->int_no)) {
         int msi_index = r->int_no - 60;
 
-        if (msi_queue[msi_index].used)
+        if (msi_queue[msi_index].is_used)
             sys_fatal("MSI %d interrupt already in queue", msi_index + 1);
 
-        msi_queue[msi_index].used = 1;
+        msi_queue[msi_index].is_used = 1;
         mem_copy(&msi_queue[msi_index].r, r, sizeof(registers_t));
         return;
     }
@@ -169,7 +165,7 @@ void interrupt_register_handler(uint8_t n, interrupt_handler_t handler) {
 
 int irq_install(void) {
     for (int i = 0; i < 5; i++)
-        msi_queue[i].used = 0;
+        msi_queue[i].is_used = 0;
 
     // durring the kernel only IRQ0 is enabled (timer)
     port_write8(0x21, 0xFE);

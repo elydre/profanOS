@@ -109,24 +109,16 @@ void sys_entry_kernel(void) {
     asm volatile("sti");
 }
 
-extern struct {
-    int used;
-    registers_t r;
-} msi_queue[5];
-
-void irq_handler(registers_t *r);
-extern interrupt_handler_t interrupt_handlers[256];
-
 void sys_exit_kernel(int restore_pic) {
     if (!IN_KERNEL)
         sys_fatal("Already in user mode");
 
     // handle pending MSI interrupts
     for (int i = 0; i < 5; i++) {
-        if (!msi_queue[i].used)
+        if (!msi_queue[i].is_used)
             continue;
 
-        msi_queue[i].used = 0;
+        msi_queue[i].is_used = 0;
     
         interrupt_handler_t handler = interrupt_handlers[msi_queue[i].r.int_no];
 
