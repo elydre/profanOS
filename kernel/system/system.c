@@ -109,24 +109,7 @@ void sys_entry_kernel(void) {
     asm volatile("sti");
 }
 
-void sys_exit_kernel(int restore_pic) {
-    if (!IN_KERNEL)
-        sys_fatal("Already in user mode");
-
-    // handle pending MSI interrupts
-    /* for (int i = 0; i < 5; i++) {
-        if (!msi_queue[i].received)
-            continue;
-
-        msi_queue[i].received = 0;
-    
-        interrupt_handler_t handler = interrupt_handlers[msi_queue[i].r.int_no];
-
-        if (handler != NULL)
-            handler(&msi_queue[i].r);
-
-        lapic_eoi();
-    }*/
+void handle_pending_msi(void) {
     int msi_queue_len = 0;
     for (int i = 0; i < 5; i++) {
         if (msi_queue[i].intno == -1)
@@ -134,7 +117,7 @@ void sys_exit_kernel(int restore_pic) {
         msi_queue_len++;
     }
 
-    if (msi_queue_len) {
+    while (msi_queue_len > 0) {
         for (int i = msi_queue_len - 1; i >= 0; i--) {
             interrupt_handler_t handler = interrupt_handlers[msi_queue[i].r.int_no];
 
@@ -158,6 +141,14 @@ void sys_exit_kernel(int restore_pic) {
         }
         asm volatile("sti");
     }
+}
+
+void sys_exit_kernel(int restore_pic) {
+    if (!IN_KERNEL)
+        sys_fatal("Already in user mode");
+
+    if (msi_queue[0].intno != -1)
+        handle_pending_msi();
 
     schedule_if_needed();
 
