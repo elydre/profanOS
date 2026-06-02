@@ -30,8 +30,21 @@
 #define IPPROTO_TCP     6
 #define IPPROTO_UDP     17
 
-#define MSG_PEEK (1 << 0)
-#define MSG_DONTWAIT (1 << 1)
+
+#define MSG_OOB         0x1
+#define MSG_PEEK        0x2
+#define MSG_DONTROUTE   0x4
+#define MSG_EOR         0x8 /* data completes record */
+#define MSG_TRUNC       0x10    /* data discarded before delivery */
+#define MSG_CTRUNC      0x20    /* control data lost before delivery */
+#define MSG_WAITALL     0x40    /* wait for full request or error */
+#define MSG_DONTWAIT    0x80    /* this message should be nonblocking */
+#define MSG_BCAST       0x100   /* this message rec'd as broadcast */
+#define MSG_MCAST       0x200   /* this message rec'd as multicast */
+#define MSG_NOSIGNAL    0x400   /* do not send SIGPIPE */
+#define MSG_CMSG_CLOEXEC0x800   /* set FD_CLOEXEC on received fds */
+#define MSG_WAITFORONE  0x1000  /* nonblocking but wait for one msg */
+#define MSG_CMSG_CLOFORK0x2000  /* set FD_CLOFORK on received fds */
 
 typedef uint32_t socklen_t;
 typedef uint16_t sa_family_t;
@@ -53,5 +66,11 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const struct 
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 ssize_t send(int sockfd, const void *buf, size_t len, int flags);
 ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+
+#define SHUT_RD 0
+#define SHUT_WR 1
+#define SHUT_RDWR 2
+
+int shutdown(int sockfd, int how);
 
 #endif

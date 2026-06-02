@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === main.c : 2026 ===                                                     |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,8 +111,8 @@ void parse_http_response(int sock)
 }
 
 int main(int argc, char **argv) {
-	if (argc != 2)
-		return 1;
+    if (argc != 2)
+        return 1;
     struct hostent *host;
     struct sockaddr_in addr;
     int sock;
@@ -129,23 +140,23 @@ int main(int argc, char **argv) {
         close(sock);
         return 1;
     }
-	char request[4096];
-	sprintf(request, 
-	"GET / HTTP/1.1\r\n"
-	"Host: %s\r\n"
-	"\r\n"
-	"\r\n", argv[1]);
-	send(sock, request, strlen(request), 0);
+    char request[4096];
+    sprintf(request,
+    "GET / HTTP/1.1\r\n"
+    "Host: %s\r\n"
+    "\r\n"
+    "\r\n", argv[1]);
+    send(sock, request, strlen(request), 0);
 
-	//parse_http_response(sock);
-	while (1) {
-		char buff[4096 + 1];
-		int ret = recv(sock, buff, 4096, 0);
-		if (ret <= 0)
-			break;
-		buff[ret] = '\0';
-		printf("%s\n", buff);
-	}
+    //parse_http_response(sock);
+    while (1) {
+        char buff[4096 + 1];
+        int ret = recv(sock, buff, 4096, 0);
+        if (ret <= 0)
+            break;
+        buff[ret] = '\0';
+        printf("%s\n", buff);
+    }
 
     close(sock);
 

@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === test.c : 2026 ===                                                     |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,20 +51,20 @@ int main(void)
         close(sock);
         return 1;
     }
-	char *request = 
-	"GET / HTTP/1.1\r\n"
-	"Host: asqel.ddns.net\r\n"
-	"\r\n"
-	"\r\n";
-	send(sock, request, strlen(request), 0);
-	while (1) {
-		char buf[512];
-		int ret = recv(sock, buf, 511, 0);
-		if (ret <= 0)
-			break;
-		buf[ret] = '\0';
-		printf("%s\n", buf);
-	}
+    char *request =
+    "GET / HTTP/1.1\r\n"
+    "Host: asqel.ddns.net\r\n"
+    "\r\n"
+    "\r\n";
+    send(sock, request, strlen(request), 0);
+    while (1) {
+        char buf[512];
+        int ret = recv(sock, buf, 511, 0);
+        if (ret <= 0)
+            break;
+        buf[ret] = '\0';
+        printf("%s\n", buf);
+    }
 
     printf("Connecté à google.com:80\n");
 

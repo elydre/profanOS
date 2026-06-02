@@ -27,7 +27,7 @@ int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
 
     if (addr2->sin_port == 0)
         return -EINVAL;
-    
+
     tcp_t *data = sock->data;
     if (TCP_GET_INFO(data, TCP_CONNECT_MASK))
         return -EISCONN;
@@ -35,11 +35,11 @@ int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
     eth_info_t info;
     eth_get_info(0, &info);
 
-	uint16_t local_port = 0;
-	if (TCP_GET_INFO(data, TCP_BIND_MASK) && data->local_ip == 0) {
-		local_port = data->local_port;
-		TCP_CLEAR_INFO(data, TCP_BIND_MASK);
-	}
+    uint16_t local_port = 0;
+    if (TCP_GET_INFO(data, TCP_BIND_MASK) && data->local_ip == 0) {
+        local_port = data->local_port;
+        TCP_CLEAR_INFO(data, TCP_BIND_MASK);
+    }
 
     if (!TCP_GET_INFO(data, TCP_BIND_MASK)) {
         struct sockaddr_in addr;
@@ -52,15 +52,15 @@ int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
             return err;
     }
 
-	TCP_SET_INFO(data, TCP_CONNECT_MASK);
+    TCP_SET_INFO(data, TCP_CONNECT_MASK);
     data->remote_port = addr2->sin_port;
     data->remote_ip = addr2->sin_addr.s_addr;
     data->state = TCP_STATE_SYN_SENT;
     tcp_send_syn(data);
     data->retries = 0;
 
-	while (data->state == TCP_STATE_SYN_SENT)
-		process_sleep(process_get_pid(), 10);
+    while (data->state == TCP_STATE_SYN_SENT)
+        process_sleep(process_get_pid(), 10);
 
     return 0;
 }

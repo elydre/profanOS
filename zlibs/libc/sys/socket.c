@@ -83,10 +83,21 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *
     errno = -ret;
     return -1;
 }
+
 ssize_t send(int sockfd, const void *buf, size_t len, int flags) {
     return sendto(sockfd, buf, len, flags, NULL, 0);
 }
 
 ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
     return recvfrom(sockfd, buf, len, flags, NULL, NULL);
+}
+
+int shutdown(int sockfd, int how) {
+    int ret = socket_shutdown_call(sockfd, how);
+
+    if (ret >= 0)
+        return ret;
+
+    errno = -ret;
+    return -1;
 }

@@ -18,26 +18,23 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
         case TCP_STATE_SYN_SENT: // we sent SYN, but we haven't received SYN+ACK yet
             if ((packet->flags & (TCP_FLAG_SYN | TCP_FLAG_ACK)) == (TCP_FLAG_SYN | TCP_FLAG_ACK)) {
                 if (packet->ack != sock->first_seq + 1) {
-					tcp_send_reset(sock);
+                    tcp_send_reset(sock);
                     return;
                 }
                 sock->state = TCP_STATE_OPEN;
                 sock->first_ack = packet->seq;
 
                 sock->current_seq = sock->first_seq + 1;
-				sock->current_ack = packet->seq + 1;
+                sock->current_ack = packet->seq + 1;
 
                 tcp_send_ack(sock);
                 sock->retries = 0;
-				TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
+                TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
 
             }
             break;
         case TCP_STATE_OPEN:
-            if (packet->flags & 0x01) { // FIN
-                // !TODO do this
-            }
-            else if (packet->data_len > 0) {
+            if (packet->data_len > 0) {
                 if (packet->seq - sock->first_ack < sock->current_ack - sock->first_ack) {
                     // TODO check if data overlap after current_ack, if so, we need to accept the new data and reack it
                     // this is a retransmission, ignore it reack it
@@ -48,37 +45,44 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                 }
                 else {
                     // check if data is longer than our buffer-curesnt size (comunisum)
-                    if (!((size_t)packet->data_len > sock->recv_max - sock->recv_len)) {
-                        mem_copy(sock->recv + sock->recv_len, packet->data, packet->data_len);
-                        sock->recv_len += packet->data_len;
+                    if (!((size_t)packet->data_len > sock->recv_max - sock->recv_len) || sock->recv == NULL) {
+                        if (sock->recv != NULL) {
+                            mem_copy(sock->recv + sock->recv_len, packet->data, packet->data_len);
+                            sock->recv_len += packet->data_len;
+                        }
                         sock->current_ack += packet->data_len;
                         tcp_send_ack(sock);
                     }
                 }
-			}
+            }
 
            if (packet->flags & TCP_FLAG_ACK) {
                size_t data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
                if (packet->ack - sock->first_seq <= sock->current_seq - sock->first_seq) {
                    // ignore a past ack
-				   kprintf("PAST\n");
+                   kprintf("PAST\n");
                }
                else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len) {
                    // this is too far in the future
-				   kprintf("FUTUR\n");
+                   kprintf("FUTUR\n");
                }
                else {
                    // present ack
-				   kprintf("PRESENT\n");
+                   kprintf("PRESENT\n");
                    int to_remove = (packet->ack - sock->first_seq) - (sock->current_seq - sock->first_seq);
                    mem_move(sock->tosend, sock->tosend + to_remove, sock->tosend_len - to_remove);
                    sock->tosend_len -= to_remove;
-				   sock->retries = 0;
-				   TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
-				   sock->current_seq += to_remove;
+                   sock->retries = 0;
+                   TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
+                   sock->current_seq += to_remove;
                }
            }
-            
+           if (packet->flags & TCP_FLAG_FIN) {
+                TCP_SET_INFO(sock, TCP_RECV_FIN_MASK);
+                sock->ack = packet->seq + 1;
+                tcp_send_ack(sock);
+           }
+
 
             break;
         default:

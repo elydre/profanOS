@@ -1,3 +1,14 @@
+/*****************************************************************************\
+|   === bind.c : 2026 ===                                                     |
+|                                                                             |
+|    -                                                             .pi0iq.    |
+|                                                                 d"  . `'b   |
+|    This file is part of profanOS and is released under          q. /|\  "   |
+|    the terms of the GNU General Public License                   `// \\     |
+|                                                                  //   \\    |
+|   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
+\*****************************************************************************/
+
 #include <minilib.h>
 #include <errno.h>
 #include "utils.h"
@@ -23,6 +34,6 @@ int socket_tcp_bind(socket_t *sock, const struct sockaddr *addr, socklen_t addrl
     tcp_lock_port(htons(port));
     data->local_ip = addr2->sin_addr.s_addr;
     data->local_port = port;
-	TCP_SET_INFO(data, TCP_BIND_MASK);
+    TCP_SET_INFO(data, TCP_BIND_MASK);
     return 0;
 }

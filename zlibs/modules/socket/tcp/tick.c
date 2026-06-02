@@ -32,10 +32,10 @@ void socket_tcp_tick(tcp_t *sock) {
                 tcp_send_data(sock);
                 sock->retries++;
             }
-            else if (sock->tosend_len > 0 && !TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK)) {
+            else if ((TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) || sock->tosend_len > 0) && !TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK)) {
                 tcp_send_data(sock);
                 sock->retries = 0;
-				TCP_SET_INFO(sock, TCP_WAIT_ACK_MASK);
+                TCP_SET_INFO(sock, TCP_WAIT_ACK_MASK);
             }
             // !TODO implement timeout for OPEN§0
             break;

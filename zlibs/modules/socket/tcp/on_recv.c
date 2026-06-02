@@ -27,11 +27,11 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
 
     packet.port_src  = data[0] << 8;
     packet.port_src |= data[1];
-	packet.port_src = htons(packet.port_src);
+    packet.port_src = htons(packet.port_src);
 
     packet.port_dest  = data[2] << 8;
     packet.port_dest |= data[3];
-	packet.port_dest = htons(packet.port_dest);
+    packet.port_dest = htons(packet.port_dest);
 
     packet.seq  = (uint32_t)data[4] << 24;
     packet.seq |= (uint32_t)data[5] << 16;
@@ -94,15 +94,15 @@ void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int da
     else if (server_sock)
         tcp_on_packet_recv(server_sock, &packet);
     else {
-		// !TODO dont do that it explodes the stack and reboot
-		//tcp_t tmp;
-		//tmp.local_ip = packet.ip_dest;
-		//tmp.remote_ip = packet.ip_src;
-		//tmp.local_port = packet.port_dest;
-		//tmp.remote_port = packet.port_src;
-		//tmp.current_seq = packet.ack;
-		//tmp.current_ack = packet.seq + packet.data_len;
-		//tmp.recv_len = sizeof(tmp.recv);
-		//tcp_send_reset(&tmp);
-	}
+        // !TODO dont do that it explodes the stack and reboot
+        //tcp_t tmp;
+        //tmp.local_ip = packet.ip_dest;
+        //tmp.remote_ip = packet.ip_src;
+        //tmp.local_port = packet.port_dest;
+        //tmp.remote_port = packet.port_src;
+        //tmp.current_seq = packet.ack;
+        //tmp.current_ack = packet.seq + packet.data_len;
+        //tmp.recv_len = sizeof(tmp.recv);
+        //tcp_send_reset(&tmp);
+    }
 }

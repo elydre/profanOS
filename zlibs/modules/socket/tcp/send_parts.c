@@ -14,10 +14,10 @@
 #include "../include/ip.h"
 
 static uint16_t get_window(tcp_t *data) {
-	size_t window = data->recv_max - data->recv_len;
-	if (window > 0xFFFF)
-		return 0xFFFF;
-	return window;
+    size_t window = data->recv_max - data->recv_len;
+    if (window > 0xFFFF)
+        return 0xFFFF;
+    return window;
 }
 
 uint16_t tcp_checksum(void *data, int len, uint32_t ip_src, uint32_t ip_dest) {
@@ -51,8 +51,8 @@ uint16_t tcp_checksum(void *data, int len, uint32_t ip_src, uint32_t ip_dest) {
 
 void tcp_send_general(tcp_packet_t *packet) {
     static uint8_t buffer[2048];
-	mem_set(buffer, 0, sizeof(buffer));
-    
+    mem_set(buffer, 0, sizeof(buffer));
+
     buffer[0] = packet->port_src & 0xff;
     buffer[1] = packet->port_src >> 8;
     buffer[2] = packet->port_dest & 0xff;
@@ -69,8 +69,8 @@ void tcp_send_general(tcp_packet_t *packet) {
     buffer[13] = packet->flags;
     buffer[14] = packet->window >> 8;
     buffer[15] = packet->window & 0xff;
-    buffer[16] = 0; 
-    buffer[17] = 0; 
+    buffer[16] = 0;
+    buffer[17] = 0;
     buffer[18] = packet->urgent_ptr >> 8;
     buffer[19] = packet->urgent_ptr & 0xff;
     mem_copy(buffer + 20, packet->data, packet->data_len);
@@ -108,7 +108,11 @@ void tcp_send_data(tcp_t *sock) {
     packet.port_dest = sock->remote_port;
     packet.seq = sock->current_seq;
     packet.ack = sock->current_ack;
-    packet.flags = TCP_FLAG_ACK | TCP_FLAG_PSH;
+    packet.flags = TCP_FLAG_ACK;
+    if (sock->data_len)
+        packet.flags |= TCP_FLAG_PSH;
+    if (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK))
+        packet.flags | = TCP_FLAG_FIN;
     packet.window = get_window(sock);
     packet.urgent_ptr = 0;
     packet.data = sock->tosend;

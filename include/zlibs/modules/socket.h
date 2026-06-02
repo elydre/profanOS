@@ -72,6 +72,7 @@ typedef struct {
     ssize_t (*sendto)(socket_t *, const void *, size_t, int, const struct sockaddr *, socklen_t);
     ssize_t (*recvfrom)(socket_t *, void *, size_t, int, struct sockaddr *, socklen_t *);
     int (*get_rw)(socket_t *);
+    int (*shutdown)(socket_t *, int);
 } protocol_t;
 
 protocol_t *socket_find_protocol(uint32_t type);
@@ -92,6 +93,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define socket_connect(a, b, c) ((int) _pscall(SOCKET_MOD_H, 2, a, b, c))
 #define socket_sendto(a) ((int) _pscall(SOCKET_MOD_H, 3, a))
 #define socket_recvfrom(a) ((int) _pscall(SOCKET_MOD_H, 4, a))
+#define socket_shutdown(a, b) ((int) _pscall(SOCKET_MOD_H, 8, a, b))
 
 #else
 

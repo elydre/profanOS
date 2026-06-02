@@ -37,6 +37,7 @@
 #define TCP_BIND_MASK (1 << 0)
 #define TCP_CONNECT_MASK (1 << 1)
 #define TCP_WAIT_ACK_MASK (1 << 2)
+#define TCP_RECV_FIN_MASK (1 << 3)
 
 #define TCP_GET_INFO(X, MASK) ((X)->mask_info & MASK)
 #define TCP_SET_INFO(X, MASK) ((X)->mask_info |= MASK)
@@ -50,7 +51,7 @@ typedef struct {
     size_t recv_max;
 
     size_t tosend_len;
-	size_t tosend_max;
+    size_t tosend_max;
 
     uint32_t local_ip;
     uint32_t remote_ip;
@@ -66,7 +67,7 @@ typedef struct {
 
     uint8_t state;
     uint8_t retries;
-	uint8_t mask_info;
+    uint8_t mask_info;
  } tcp_t;
 
 typedef struct {

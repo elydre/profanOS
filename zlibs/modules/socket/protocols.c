@@ -22,6 +22,7 @@ protocol_t socket_protocols[] = {
         socket_udp_sendto,
         socket_udp_recvfrom,
         socket_udp_get_rw,
+        NULL
     },
     {
         SOCKET_TCP,
@@ -31,6 +32,7 @@ protocol_t socket_protocols[] = {
         socket_tcp_sendto,
         socket_tcp_recvfrom,
         NULL, //socket_tcp_get_rw,
+        socket_tcp_shutdown
     },
     {0},
 };

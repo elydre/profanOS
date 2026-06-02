@@ -26,11 +26,11 @@ int socket_udp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
     eth_info_t info;
     eth_get_info(0, &info);
 
-	uint16_t local_port = 0;
-	if (data->is_bound && data->local_ip == 0) {
-		local_port = data->local_port;
-		data->is_bound = 0;
-	}
+    uint16_t local_port = 0;
+    if (data->is_bound && data->local_ip == 0) {
+        local_port = data->local_port;
+        data->is_bound = 0;
+    }
 
     if (!data->is_bound) {
         struct sockaddr_in addr;
