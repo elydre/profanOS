@@ -25,7 +25,7 @@ int main(void)
     int sock;
 
     // Résolution DNS
-    host = gethostbyname("asqel.ddns.net");
+    host = gethostbyname("www.google.com");
     if (host == NULL) {
         perror("gethostbyname");
         return 1;
@@ -53,13 +53,16 @@ int main(void)
     }
     char *request =
     "GET / HTTP/1.1\r\n"
-    "Host: asqel.ddns.net\r\n"
+    "Host: www.google.com\r\n"
+    "Connection: close\r\n"
     "\r\n"
     "\r\n";
     send(sock, request, strlen(request), 0);
+    shutdown(sock, SHUT_WR);
+
     while (1) {
-        char buf[512];
-        int ret = recv(sock, buf, 511, 0);
+        char buf[4096 + 1];
+        int ret = recv(sock, buf, 4096, 0);
         if (ret <= 0)
             break;
         buf[ret] = '\0';

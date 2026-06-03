@@ -60,15 +60,15 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                size_t data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
                if (packet->ack - sock->first_seq <= sock->current_seq - sock->first_seq) {
                    // ignore a past ack
-                   kprintf("PAST\n");
+                   kprintf_serial("PAST\n");
                }
                else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len + (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) ? 1 : 0)) {
                    // this is too far in the future
-                   kprintf("FUTUR\n");
+                   kprintf_serial("FUTUR\n");
                }
                else {
                     // present ack
-                    kprintf("PRESENT\n");
+                    kprintf_serial("PRESENT\n");
                     int to_remove = (packet->ack - sock->first_seq) - (sock->current_seq - sock->first_seq);
                     int do_ack_fin = 0;
                     if ((size_t)to_remove > sock->tosend_len && TCP_GET_INFO(sock, TCP_SEND_FIN_MASK)) {

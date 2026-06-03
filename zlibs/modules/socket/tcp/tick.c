@@ -13,6 +13,7 @@
 #include <cpu/timer.h>
 
 #include "tcp.h"
+#include "utils.h"
 
 #define TCP_TIMEOUT 500 // 500ms
 #define TCP_MAX_RETRIES 5
@@ -21,12 +22,13 @@ void socket_tcp_tick(socket_t *sock_ptr) {
     uint32_t now = timer_get_ms();
     tcp_t *sock = sock_ptr->data;
     if (sock->state == TCP_STATE_CLOSED && sock_ptr->ref_count == 0) {
-        tcp_free_port(sock->local_port);
+        tcp_free_port(htons(sock->local_port));
         free(sock->recv);
         free(sock->tosend);
         free(sock);
         sock_ptr->data = NULL;
         sock_ptr->do_remove = 1;
+        sock_ptr->type = 0;
         return;
     }
 

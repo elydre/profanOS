@@ -105,11 +105,15 @@ void __exit_libc(void) {
         }
         free(g_atexit_funcs);
     }
+    fprintf(stderr, "libc: 1\n");
 
     // free the environment
     if (environ) {
-        for (int i = 0; environ[i] != NULL; i++)
+        for (int i = 0; environ[i] != NULL; i++) {
+            fprintf(stderr, "libc: free env '%s'\n", environ[i]);
             free(environ[i]);
+        }
+        fprintf(stderr, "libc: 2\n");
         free(environ);
     }
 }

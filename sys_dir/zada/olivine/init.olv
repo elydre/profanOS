@@ -83,4 +83,4 @@ FUNC stp
 END
 
 sleep 2
-leaks wget www.google.com
+dlg test
