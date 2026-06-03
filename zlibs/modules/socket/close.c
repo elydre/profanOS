@@ -14,6 +14,12 @@
 
 void socket_close(socket_t *sock) {
     sock->ref_count--;
+    if (sock->ref_count == 0) {
+        protocol_t *prot = socket_find_protocol(sock->type);
+        if (!prot || !prot->shutdown)
+            return ;
+        prot->shutdown(sock, SHUT_RDWR);
+    }
 }
 
 int socket_close_id(int id) {

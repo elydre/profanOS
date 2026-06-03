@@ -19,7 +19,7 @@ static ssize_t socket_tcp_send(socket_t *sock, const uint8_t *buffer, size_t len
         return -ENOTCONN;
 
     size_t original_len = len;
-    while (len && data->state == TCP_STATE_OPEN) {
+    while (len && data->state == TCP_STATE_OPEN && !TCP_GET_INFO(data, TCP_SEND_FIN_MASK)) {
         if (data->tosend_len == data->tosend_max) {
             process_sleep(process_get_pid(), 5);
             continue;

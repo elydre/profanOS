@@ -17,8 +17,18 @@
 #define TCP_TIMEOUT 500 // 500ms
 #define TCP_MAX_RETRIES 5
 
-void socket_tcp_tick(tcp_t *sock) {
+void socket_tcp_tick(socket_t *sock_ptr) {
     uint32_t now = timer_get_ms();
+    tcp_t *sock = sock_ptr->data;
+    if (sock->state == TCP_STATE_CLOSED && sock_ptr->ref_count == 0) {
+        tcp_free_port(sock->local_port);
+        free(sock->recv);
+        free(sock->tosend);
+        free(sock);
+        sock_ptr->data = NULL;
+        sock_ptr->do_remove = 1;
+        return;
+    }
 
     switch (sock->state) {
         case TCP_STATE_SYN_SENT:
@@ -32,13 +42,20 @@ void socket_tcp_tick(tcp_t *sock) {
                 tcp_send_data(sock);
                 sock->retries++;
             }
-            else if ((TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) || sock->tosend_len > 0) &&
+            else if (((TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) && !TCP_GET_INFO(sock, TCP_FIN_ACKED_MASK)) || sock->tosend_len > 0) &&
                             !TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK)) {
                 tcp_send_data(sock);
                 sock->retries = 0;
                 TCP_SET_INFO(sock, TCP_WAIT_ACK_MASK);
             }
-            // !TODO implement timeout for OPEN§0
+            // check if both are FIN and ACKed, if so, we can close the connection
+            if (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) && TCP_GET_INFO(sock, TCP_RECV_FIN_MASK) && sock->recv_len == 0) {
+                sock->state = TCP_STATE_CLOSED;
+                free(sock->recv);
+                sock->recv = NULL;
+                sock->recv_len = 0;
+                sock->recv_max = 0;
+            }
             break;
         default:
             break;

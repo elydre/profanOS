@@ -62,19 +62,26 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                    // ignore a past ack
                    kprintf("PAST\n");
                }
-               else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len) {
+               else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len + (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) ? 1 : 0)) {
                    // this is too far in the future
                    kprintf("FUTUR\n");
                }
                else {
-                   // present ack
-                   kprintf("PRESENT\n");
-                   int to_remove = (packet->ack - sock->first_seq) - (sock->current_seq - sock->first_seq);
-                   mem_move(sock->tosend, sock->tosend + to_remove, sock->tosend_len - to_remove);
-                   sock->tosend_len -= to_remove;
-                   sock->retries = 0;
-                   TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
-                   sock->current_seq += to_remove;
+                    // present ack
+                    kprintf("PRESENT\n");
+                    int to_remove = (packet->ack - sock->first_seq) - (sock->current_seq - sock->first_seq);
+                    int do_ack_fin = 0;
+                    if ((size_t)to_remove > sock->tosend_len && TCP_GET_INFO(sock, TCP_SEND_FIN_MASK)) {
+                        to_remove--;
+                        do_ack_fin = 1;
+                    }
+                    mem_move(sock->tosend, sock->tosend + to_remove, sock->tosend_len - to_remove);
+                    sock->tosend_len -= to_remove;
+                    sock->retries = 0;
+                    TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
+                    sock->current_seq += to_remove + do_ack_fin;
+                    if (do_ack_fin)
+                        TCP_SET_INFO(sock, TCP_FIN_ACKED_MASK);
                }
            }
            if (packet->flags & TCP_FLAG_FIN) {

@@ -39,6 +39,7 @@
 #define TCP_WAIT_ACK_MASK (1 << 2)
 #define TCP_RECV_FIN_MASK (1 << 3)
 #define TCP_SEND_FIN_MASK (1 << 4)
+#define TCP_FIN_ACKED_MASK (1 << 5)
 
 #define TCP_GET_INFO(X, MASK) ((X)->mask_info & MASK)
 #define TCP_SET_INFO(X, MASK) ((X)->mask_info |= MASK)
@@ -104,7 +105,7 @@ int socket_tcp_shutdown(socket_t *sock, int how);
 void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet);
 
 void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int data_len);
-void socket_tcp_tick(tcp_t *sock);
+void socket_tcp_tick(socket_t *sock_ptr);
 
 void tcp_send_syn(tcp_t *sock);
 void tcp_send_data(tcp_t *sock);

@@ -22,7 +22,7 @@ ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len,
 
     if (data->state == TCP_STATE_CLOSED)
         return -EAGAIN;
-    if (data->recv == NULL && TCP_GET_INFO(data, TCP_RECV_FIN_MASK))
+    if (data->recv == NULL)
         return 0;
 
     while (data->recv_len == 0) {
@@ -30,7 +30,7 @@ ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len,
             break;
         process_sleep(process_get_pid(), 5);
     }
-    if (data->recv_len == 0)
+    if (data->recv_len == 0 || data->recv == NULL)
         return 0;
     ssize_t to_read = TCP_MIN(data->recv_len, len);
     mem_copy(buf, data->recv, to_read);

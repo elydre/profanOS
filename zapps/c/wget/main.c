@@ -147,6 +147,7 @@ int main(int argc, char **argv) {
     "\r\n"
     "\r\n", argv[1]);
     send(sock, request, strlen(request), 0);
+    shutdown(sock, SHUT_WR);
 
     //parse_http_response(sock);
     while (1) {

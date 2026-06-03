@@ -16,8 +16,9 @@
 ssize_t socket_shutdown(int sockfd, int how) {
     socket_t *sock = socket_find_fd(sockfd);
     protocol_t *prot = socket_find_protocol(sock->type);
-    if (!prot || !prot->sendto)
+    if (!prot || !prot->shutdown)
         return -EINVAL;
-
-     return prot->shutdown(sock, how);
+    if (how != SHUT_RD && how != SHUT_WR && how != SHUT_RDWR)
+        return -EINVAL;
+    return prot->shutdown(sock, how);
 }

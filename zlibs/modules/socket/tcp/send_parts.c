@@ -112,7 +112,7 @@ void tcp_send_data(tcp_t *sock) {
     packet.data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
     if (packet.data_len > 0)
         packet.flags |= TCP_FLAG_PSH;
-    if (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK))
+    if (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) && (size_t)packet.data_len == sock->tosend_len)
         packet.flags |= TCP_FLAG_FIN;
     packet.window = get_window(sock);
     packet.urgent_ptr = 0;
