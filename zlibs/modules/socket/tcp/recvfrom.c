@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === recvfrom.c : 2026 ===                                                 |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -13,7 +13,9 @@
 #include <kernel/process.h>
 #include <errno.h>
 
-ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
+ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len,
+                int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
+
     (void)src_addr;
     (void)addrlen;
     tcp_t *data = sock->data;

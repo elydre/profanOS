@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === send_parts.c : 2026 ===                                               |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -109,14 +109,14 @@ void tcp_send_data(tcp_t *sock) {
     packet.seq = sock->current_seq;
     packet.ack = sock->current_ack;
     packet.flags = TCP_FLAG_ACK;
-    if (sock->data_len)
+    packet.data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
+    if (packet.data_len > 0)
         packet.flags |= TCP_FLAG_PSH;
     if (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK))
-        packet.flags | = TCP_FLAG_FIN;
+        packet.flags |= TCP_FLAG_FIN;
     packet.window = get_window(sock);
     packet.urgent_ptr = 0;
     packet.data = sock->tosend;
-    packet.data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
     tcp_send_general(&packet);
 }
 

@@ -93,7 +93,7 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
 }
 
 int shutdown(int sockfd, int how) {
-    int ret = socket_shutdown_call(sockfd, how);
+    int ret = socket_shutdown(sockfd, how);
 
     if (ret >= 0)
         return ret;

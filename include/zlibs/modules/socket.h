@@ -53,6 +53,7 @@ socket_t *socket_find_fd(int fd);
 socket_t *socket_find_id(int id);
 ssize_t socket_sendto(sendto_arg_t *args);
 void socket_inc_ref(int id);
+ssize_t socket_shutdown(int sockfd, int how);
 
 typedef struct {
     int sockfd;

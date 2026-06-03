@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === update_sock.c : 2026 ===                                              |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -79,7 +79,8 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
            }
            if (packet->flags & TCP_FLAG_FIN) {
                 TCP_SET_INFO(sock, TCP_RECV_FIN_MASK);
-                sock->ack = packet->seq + 1;
+                // sock->ack = packet->seq + 1;
+                sock->current_ack += 1;
                 tcp_send_ack(sock);
            }
 

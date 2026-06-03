@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === sendto.c : 2026 ===                                                   |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -13,15 +13,7 @@
 #include <kernel/process.h>
 #include <errno.h>
 
-ssize_t socket_tcp_sendto(socket_t *sock, const void *buf, size_t len, int flags,
-            const struct sockaddr *dest_addr, socklen_t addrlen) {
-    if (addrlen != 0 || dest_addr != 0)
-        return -EISCONN;
-    return socket_tcp_send(sock, buf, len, flags);
-}
-
-ssize_t socket_tcp_send(socket_t *sock, const uint8_t *buffer, size_t len, int flags) {
-
+static ssize_t socket_tcp_send(socket_t *sock, const uint8_t *buffer, size_t len, int flags) {
     tcp_t *data = sock->data;
     if (data->state != TCP_STATE_OPEN)
         return -ENOTCONN;
@@ -40,4 +32,11 @@ ssize_t socket_tcp_send(socket_t *sock, const uint8_t *buffer, size_t len, int f
         data->tosend_len += to_copy;
     }
     return original_len - len;
+}
+
+ssize_t socket_tcp_sendto(socket_t *sock, const void *buf, size_t len, int flags,
+            const struct sockaddr *dest_addr, socklen_t addrlen) {
+    if (addrlen != 0 || dest_addr != 0)
+        return -EISCONN;
+    return socket_tcp_send(sock, buf, len, flags);
 }

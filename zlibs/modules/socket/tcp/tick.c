@@ -1,7 +1,7 @@
 /*****************************************************************************\
 |   === tick.c : 2026 ===                                                     |
 |                                                                             |
-|    -                                                             .pi0iq.    |
+|    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -32,7 +32,8 @@ void socket_tcp_tick(tcp_t *sock) {
                 tcp_send_data(sock);
                 sock->retries++;
             }
-            else if ((TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) || sock->tosend_len > 0) && !TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK)) {
+            else if ((TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) || sock->tosend_len > 0) &&
+                            !TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK)) {
                 tcp_send_data(sock);
                 sock->retries = 0;
                 TCP_SET_INFO(sock, TCP_WAIT_ACK_MASK);

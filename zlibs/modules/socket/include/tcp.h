@@ -38,6 +38,7 @@
 #define TCP_CONNECT_MASK (1 << 1)
 #define TCP_WAIT_ACK_MASK (1 << 2)
 #define TCP_RECV_FIN_MASK (1 << 3)
+#define TCP_SEND_FIN_MASK (1 << 4)
 
 #define TCP_GET_INFO(X, MASK) ((X)->mask_info & MASK)
 #define TCP_SET_INFO(X, MASK) ((X)->mask_info |= MASK)
@@ -93,11 +94,13 @@ int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
 
 ssize_t socket_tcp_sendto(socket_t *sock, const void *buf, size_t len, int flags,
             const struct sockaddr *dest_addr, socklen_t addrlen);
-ssize_t socket_tcp_send(socket_t *sock, const uint8_t *buffer, size_t len, int flags);
 
 ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len, int flags,
             struct sockaddr *src_addr, socklen_t *addrlen);
+
 int socket_tcp_get_rw(socket_t *sock);
+int socket_tcp_shutdown(socket_t *sock, int how);
+
 void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet);
 
 void socket_on_recv_tcp(uint32_t src_ip, uint32_t dest_ip, uint8_t *data, int data_len);

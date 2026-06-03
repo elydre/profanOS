@@ -31,20 +31,20 @@
 #define IPPROTO_UDP     17
 
 
-#define MSG_OOB         0x1
-#define MSG_PEEK        0x2
-#define MSG_DONTROUTE   0x4
-#define MSG_EOR         0x8 /* data completes record */
-#define MSG_TRUNC       0x10    /* data discarded before delivery */
-#define MSG_CTRUNC      0x20    /* control data lost before delivery */
-#define MSG_WAITALL     0x40    /* wait for full request or error */
-#define MSG_DONTWAIT    0x80    /* this message should be nonblocking */
-#define MSG_BCAST       0x100   /* this message rec'd as broadcast */
-#define MSG_MCAST       0x200   /* this message rec'd as multicast */
-#define MSG_NOSIGNAL    0x400   /* do not send SIGPIPE */
-#define MSG_CMSG_CLOEXEC0x800   /* set FD_CLOEXEC on received fds */
-#define MSG_WAITFORONE  0x1000  /* nonblocking but wait for one msg */
-#define MSG_CMSG_CLOFORK0x2000  /* set FD_CLOFORK on received fds */
+#define MSG_OOB             0x1
+#define MSG_PEEK            0x2
+#define MSG_DONTROUTE       0x4
+#define MSG_EOR             0x8
+#define MSG_TRUNC           0x10
+#define MSG_CTRUNC          0x20
+#define MSG_WAITALL         0x40
+#define MSG_DONTWAIT        0x80
+#define MSG_BCAST           0x100
+#define MSG_MCAST           0x200
+#define MSG_NOSIGNAL        0x400
+#define MSG_CMSG_CLOEXEC    0x800
+#define MSG_WAITFORONE      0x1000
+#define MSG_CMSG_CLOFORK    0x2000
 
 typedef uint32_t socklen_t;
 typedef uint16_t sa_family_t;
