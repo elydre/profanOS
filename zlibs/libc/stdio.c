@@ -97,7 +97,7 @@ void __stdio_init(void) {
     stderr = fdopen_mode(2, O_WRONLY);
 
     // init printf buffer
-    g_printf_buffer = malloc(0x1000);
+    g_printf_buffer = malloc(0x4000);
 }
 
 void __stdio_fini(void) {
