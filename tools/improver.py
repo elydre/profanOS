@@ -148,7 +148,9 @@ def check_for_header(lines, path):
 def detecte_brace(line, prev_line, path, l):
     if line.strip() != "{":
         return
-    if prev_line is None or prev_line.strip() == "" or prev_line.strip().endswith("{"):
+    if prev_line is None or prev_line.strip() == "":
+        return
+    if prev_line.strip().endswith("{") or prev_line.strip().endswith(","):
         return
     if (len(line) - len(line.lstrip())) < (len(prev_line) - len(prev_line.lstrip())):
         return
