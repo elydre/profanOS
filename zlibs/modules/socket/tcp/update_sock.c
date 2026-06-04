@@ -62,7 +62,8 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                    // ignore a past ack
                    kprintf_serial("PAST\n");
                }
-               else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len + (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) ? 1 : 0)) {
+               else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len +
+                            (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) ? 1 : 0)) {
                    // this is too far in the future
                    kprintf_serial("FUTUR\n");
                }

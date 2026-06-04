@@ -21,5 +21,6 @@ void *__module_func_array[] = {
     socket_close_id,
     socket_get_rw,
     socket_inc_ref,
-    socket_shutdown
+    socket_shutdown,
+    socket_getname
 };

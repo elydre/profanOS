@@ -15,7 +15,7 @@
 #include <modules/socket.h>
 #include <errno.h>
 
-#define SOCKET_UDP (AF_INET | (SOCK_DGRAM << 8) | (0 << 16 ))
+#define SOCKET_UDP (AF_INET | (SOCK_DGRAM << 8) | (IPPROTO_UDP << 16))
 
 typedef struct udp_header_t{
     uint16_t src_port;
@@ -56,6 +56,7 @@ ssize_t socket_udp_sendto(socket_t *sock, const void *buf, size_t len, int flags
 ssize_t socket_udp_recvfrom(socket_t *sock, void *buf, size_t len, int flags,
             struct sockaddr *src_addr, socklen_t *addrlen);
 int socket_udp_get_rw(socket_t *sock);
+int socket_udp_getname(socket_t *sock, int local, struct sockaddr *addr, socklen_t *addrlen);
 
 
 void socket_udp_tick(socket_t *sock);

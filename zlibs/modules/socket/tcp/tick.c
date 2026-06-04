@@ -44,8 +44,8 @@ void socket_tcp_tick(socket_t *sock_ptr) {
                 tcp_send_data(sock);
                 sock->retries++;
             }
-            else if (((TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) && !TCP_GET_INFO(sock, TCP_FIN_ACKED_MASK)) || sock->tosend_len > 0) &&
-                            !TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK)) {
+            else if (((TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) && !TCP_GET_INFO(sock, TCP_FIN_ACKED_MASK)) ||
+                            sock->tosend_len > 0) && !TCP_GET_INFO(sock, TCP_WAIT_ACK_MASK)) {
                 tcp_send_data(sock);
                 sock->retries = 0;
                 TCP_SET_INFO(sock, TCP_WAIT_ACK_MASK);

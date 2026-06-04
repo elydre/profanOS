@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === sendto.c : 2026 ===                                                   |
+|   === getnames.c : 2026 ===                                                 |
 |                                                                             |
 |    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -9,23 +9,24 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <modules/socket.h>
 #include <errno.h>
+#include "tcp.h"
 
-ssize_t socket_sendto(sendto_arg_t *args) {
-    int sockfd = args->sockfd;
-    const void *buf = args->buf;
-    size_t len = args->len;
-    int flags = args->flags;
-    const struct sockaddr *dest_addr = args->dest_addr;
-    socklen_t addrlen = args->addrlen;
-    socket_t *sock = socket_find_fd(sockfd);
-    if (!sock)
-        return -ENOTSOCK;
-
-    protocol_t *prot = socket_find_protocol(sock->type);
-    if (!prot || !prot->sendto)
+int socket_tcp_getname(socket_t *sock, int local, struct sockaddr *addr, socklen_t *addrlen) {
+    tcp_t *data = sock->data;
+    if (*addrlen < sizeof(struct sockaddr_in)) {
+        *addrlen = sizeof(struct sockaddr_in);
         return -EINVAL;
-
-     return prot->sendto(sock, buf, len, flags, dest_addr, addrlen);
+    }
+    struct sockaddr_in *in_addr = (struct sockaddr_in *)addr;
+    in_addr->sin_family = AF_INET;
+    if (local) {
+         in_addr->sin_port = data->local_port;
+         in_addr->sin_addr.s_addr = data->local_ip;
+    } else {
+         in_addr->sin_port = data->remote_port;
+         in_addr->sin_addr.s_addr = data->remote_ip;
+    }
+    *addrlen = sizeof(struct sockaddr_in);
+    return 0;
 }

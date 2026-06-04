@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
+#include <modules/socket.h>
 #include <errno.h>
-#include "udp.h"
 
 void socket_close(socket_t *sock) {
     sock->ref_count--;

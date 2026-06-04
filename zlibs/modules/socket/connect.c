@@ -11,7 +11,6 @@
 
 #include <modules/socket.h>
 #include <errno.h>
-#include "udp.h"
 
 int socket_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     socket_t *sock = socket_find_fd(sockfd);

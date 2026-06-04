@@ -72,6 +72,8 @@ void profan_print_trace(void) {
     for (int i = 0; i < 8 && ebp; i++) {
         if (ebp->eip >= 0xB0000000 && ebp->eip < 0xC0000000)
             break; // deluge
+        if (ebp->eip < 0x200000)
+            break;
 
         name = dlg_fn_name((void *) ebp->eip, &libname);
 

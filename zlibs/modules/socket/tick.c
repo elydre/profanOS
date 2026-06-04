@@ -31,8 +31,7 @@ void socket_tick(int len, uint8_t *packet) {
                 socket_tcp_tick(&sockets[i]);
                 break;
             default:
-                sys_warning("%d %d %d\n", AF_INET, SOCK_DGRAM, 0);
-                sys_warning("Invalid socket type %d %d %d\n",
+                sys_warning("Invalid socket type %d %d %d",
                     sockets[i].type & 0xff,
                     (sockets[i].type >> 8) & 0xff,
                     (sockets[i].type >> 16));

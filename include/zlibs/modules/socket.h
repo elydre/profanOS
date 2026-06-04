@@ -54,6 +54,7 @@ socket_t *socket_find_id(int id);
 ssize_t socket_sendto(sendto_arg_t *args);
 void socket_inc_ref(int id);
 ssize_t socket_shutdown(int sockfd, int how);
+int socket_getname(int sockfd, int local, struct sockaddr *addr, socklen_t *addrlen);
 
 typedef struct {
     int sockfd;
@@ -74,6 +75,7 @@ typedef struct {
     ssize_t (*recvfrom)(socket_t *, void *, size_t, int, struct sockaddr *, socklen_t *);
     int (*get_rw)(socket_t *);
     int (*shutdown)(socket_t *, int);
+    int (*getname)(socket_t *, int, struct sockaddr *, socklen_t *);
 } protocol_t;
 
 protocol_t *socket_find_protocol(uint32_t type);
@@ -95,6 +97,7 @@ extern int profan_syscall(uint32_t id, ...);
 #define socket_sendto(a) ((int) _pscall(SOCKET_MOD_H, 3, a))
 #define socket_recvfrom(a) ((int) _pscall(SOCKET_MOD_H, 4, a))
 #define socket_shutdown(a, b) ((int) _pscall(SOCKET_MOD_H, 8, a, b))
+#define socket_getname(a, b, c, d) ((int) _pscall(SOCKET_MOD_H, 9, a, b, c, d))
 
 #else
 

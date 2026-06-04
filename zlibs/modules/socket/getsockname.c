@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === sendto.c : 2026 ===                                                   |
+|   === getsockname.c : 2026 ===                                              |
 |                                                                             |
 |    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -12,20 +12,14 @@
 #include <modules/socket.h>
 #include <errno.h>
 
-ssize_t socket_sendto(sendto_arg_t *args) {
-    int sockfd = args->sockfd;
-    const void *buf = args->buf;
-    size_t len = args->len;
-    int flags = args->flags;
-    const struct sockaddr *dest_addr = args->dest_addr;
-    socklen_t addrlen = args->addrlen;
+int socket_getname(int sockfd, int local, struct sockaddr *addr, socklen_t *addrlen) {
     socket_t *sock = socket_find_fd(sockfd);
     if (!sock)
-        return -ENOTSOCK;
+        return -EBADF;
 
     protocol_t *prot = socket_find_protocol(sock->type);
-    if (!prot || !prot->sendto)
+    if (!prot || !prot->getname)
         return -EINVAL;
 
-     return prot->sendto(sock, buf, len, flags, dest_addr, addrlen);
+    return prot->getname(sock, local, addr, addrlen);
 }

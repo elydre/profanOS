@@ -1,5 +1,5 @@
 /*****************************************************************************\
-|   === sendto.c : 2026 ===                                                   |
+|   === get_rw.c : 2026 ===                                                   |
 |                                                                             |
 |    Unix socket implementation as kernel module                   .pi0iq.    |
 |                                                                 d"  . `'b   |
@@ -9,23 +9,21 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <modules/socket.h>
-#include <errno.h>
+#include "tcp.h"
 
-ssize_t socket_sendto(sendto_arg_t *args) {
-    int sockfd = args->sockfd;
-    const void *buf = args->buf;
-    size_t len = args->len;
-    int flags = args->flags;
-    const struct sockaddr *dest_addr = args->dest_addr;
-    socklen_t addrlen = args->addrlen;
-    socket_t *sock = socket_find_fd(sockfd);
-    if (!sock)
-        return -ENOTSOCK;
+int socket_tcp_get_rw(socket_t *sock) {
+    int res = 0;
+    tcp_t *data = sock->data;
 
-    protocol_t *prot = socket_find_protocol(sock->type);
-    if (!prot || !prot->sendto)
-        return -EINVAL;
+    if (data->state == TCP_STATE_OPEN) {
+        if (data->recv_len > 0 && !TCP_GET_INFO(data, TCP_RECV_FIN_MASK))
+            res |= FM_READ;
+        if (data->tosend_len < data->tosend_max && !TCP_GET_INFO(data, TCP_SEND_FIN_MASK))
+            res |= FM_WRITE;
+    }
 
-     return prot->sendto(sock, buf, len, flags, dest_addr, addrlen);
+    if (data->state == TCP_STATE_SYN_SENT)
+        res |= FM_WRITE;
+
+    return res;
 }

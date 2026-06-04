@@ -13,7 +13,6 @@
 #include <modules/socket.h>
 #include <modules/eth.h>
 #include <minilib.h>
-#include "udp.h"
 
 int socket_pid = -1;
 

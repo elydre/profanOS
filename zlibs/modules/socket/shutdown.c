@@ -9,9 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-
+#include <modules/socket.h>
 #include <errno.h>
-#include "udp.h"
 
 ssize_t socket_shutdown(int sockfd, int how) {
     socket_t *sock = socket_find_fd(sockfd);

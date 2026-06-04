@@ -15,7 +15,7 @@
 #include <modules/socket.h>
 #include <minilib.h>
 
-#define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (0 << 16))
+#define SOCKET_TCP (AF_INET | (SOCK_STREAM << 8) | (IPPROTO_TCP << 16))
 
 #define TCP_DEFAULT_BUFFER 0xFFFF
 
@@ -101,6 +101,7 @@ ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len, int flags,
 
 int socket_tcp_get_rw(socket_t *sock);
 int socket_tcp_shutdown(socket_t *sock, int how);
+int socket_tcp_getname(socket_t *sock, int local, struct sockaddr *addr, socklen_t *addrlen);
 
 void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet);
 

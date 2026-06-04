@@ -9,8 +9,8 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include "arp.h"
 #include <minilib.h>
+#include "arp.h"
 
 static void respond(arp_packet_t *packet) {
     if (packet->htype != 1 || packet->ptype != 0x0800)
