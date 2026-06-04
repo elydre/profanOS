@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
 #include <ctype.h>
 
 uint32_t htonl(uint32_t hostlong) {
@@ -156,4 +157,11 @@ int inet_pton(int af, const char *s, void *a0) {
     }
 
     return !(need_v4 && inet_pton(AF_INET, (void *) s, a - 4) <= 0);
+}
+
+char *inet_ntoa(struct in_addr in) {
+    static char buf[16];
+    unsigned char *a = (void *) &in;
+    snprintf(buf, sizeof(buf), "%u.%u.%u.%u", a[0], a[1], a[2], a[3]);
+    return buf;
 }

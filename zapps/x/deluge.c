@@ -18,7 +18,7 @@
 #include <dlfcn.h>
 #include <elf.h>
 
-#define DELUGE_VERSION  "5.4"
+#define DELUGE_VERSION  "5.7"
 #define ALWAYS_DEBUG    0
 
 #define VISIBILITY_LOCAL  0
@@ -101,10 +101,10 @@ dlg_extra_t g_extra_syms[] = {
 typedef struct {
     char   *name;
     char   *extra_path;
-    char   *extra_lib;
     char   *patch_file;
     uint8_t show_leaks;
     int     arg_offset;
+    int     weak_all;
     int     debug;
 } deluge_args_t;
 
@@ -116,28 +116,28 @@ deluge_args_t *g_args;
  *                             *
 ********************************/
 
-#define raise_error(fmt, ...) {  \
+#define raise_error(fmt, ...) do {  \
         mmq_printf(2, "DELUGE FATAL: "fmt"\n", ##__VA_ARGS__); \
         mmq_exit(1);  \
-    }
+    } while (0)
 
-#define debug_printf(lvl, ...) {          \
-    if (g_args->debug >= lvl) {           \
+#define debug_printf(lvl, ...) do {        \
+    if (g_args->debug >= lvl) {            \
         mmq_putstr(2, "\e[37m[DELUGE] ");  \
         mmq_printf(2, __VA_ARGS__);        \
         mmq_putstr(2, "\e[0m\n");          \
-    }}
+    }} while (0)
 
-#define debug_printf_tab(lvl, r, ...) {   \
-    if (g_args->debug >= lvl) {           \
+#define debug_printf_tab(lvl, r, ...) do { \
+    if (g_args->debug >= lvl) {            \
         mmq_putstr(2, "\e[37m[DELUGE] ");  \
-        for (int i = 0; i < r - 1; i++)   \
+        for (int i = 0; i < r - 1; i++)    \
             mmq_putstr(2, "--");           \
-        if (r > 0)                        \
+        if (r > 0)                         \
             mmq_putstr(2, "> ");           \
         mmq_printf(2, __VA_ARGS__);        \
         mmq_putstr(2, "\e[0m\n");          \
-    }}
+    }} while (0)
 
 /********************************
  *                             *
@@ -566,7 +566,7 @@ int dynamic_linker(elfobj_t *obj) {
 
             if (does_type_required_sym(type)) {
                 // check if the symbol is defined in the object
-                if (val && type != R_386_COPY) {
+                if (val && type != R_386_COPY && sym->st_shndx != SHN_UNDEF) {
                     if (obj->type == ET_DYN)
                         val += (uint32_t) obj->mem;
                 } else {
@@ -574,8 +574,15 @@ int dynamic_linker(elfobj_t *obj) {
                             1, // allow global libraries
                             0  // don't check local symbols
                     );
-                    if (val == 0)
-                        raise_error("%s: symbol '%s' not found", obj->name, name);
+
+                    if (val == 0) {
+                        if (ELF32_ST_BIND(sym->st_info) == STB_WEAK)
+                            debug_printf(2, "%s: weak symbol '%s' not found", obj->name, name);
+                        else if (g_args->weak_all)
+                            debug_printf(0, "%s: symbol '%s' not found", obj->name, name, ELF32_ST_BIND(sym->st_info));
+                        else
+                            raise_error("%s: symbol '%s' not found", obj->name, name);
+                    }
                 }
             }
 
@@ -585,6 +592,8 @@ int dynamic_linker(elfobj_t *obj) {
                 ptr = (uint32_t *)(rel[j].r_offset);
 
             switch (type) {
+                case R_386_NONE:        // none
+                    break;
                 case R_386_32:          // word32  S + A
                     *ptr = val + *ptr;
                     break;
@@ -1020,7 +1029,6 @@ void show_help(int err) {
         mmq_printf(1,
             "Usage: deluge [options] <file> [args]\n"
             "Options:\n"
-            "  -a   import an additional library\n"
             "  -d   show additional debug information\n"
             "  -e   don't use filename as argument\n"
             "  -h   show this help message and exit\n"
@@ -1029,6 +1037,7 @@ void show_help(int err) {
             "  -m   show memory leaks at exit\n"
             "  -p   load shared object as patch file\n"
             "  -v   dump deluge version and exit\n"
+            "  -w   interpret all symbols as weak\n"
         );
     }
 
@@ -1061,17 +1070,6 @@ void deluge_parse(int argc, char **argv) {
                 if (g_args->debug == 0)
                     g_args->debug = 1;
                 break;
-            case 'a':
-                if (i + 1 >= argc) {
-                    mmq_printf(2, "deluge: missing argument for -l\n");
-                    show_help(1);
-                }
-                if (g_args->extra_lib) {
-                    mmq_printf(2, "deluge: extra library already set\n");
-                    show_help(1);
-                }
-                g_args->extra_lib = argv[++i];
-                break;
             case 'L':
                 if (i + 1 >= argc) {
                     mmq_printf(2, "deluge: missing argument for -L\n");
@@ -1101,6 +1099,9 @@ void deluge_parse(int argc, char **argv) {
                 mmq_printf(1, "deluge %s\n", DELUGE_VERSION);
                 mmq_exit(0);
                 break; // unreachable
+            case 'w':
+                g_args->weak_all = 1;
+                break;
             case '\0':
             case '-':
                 mmq_printf(2, "deluge: unknown option '%s'\n", argv[i]);
@@ -1124,7 +1125,7 @@ int main(int argc, char **argv, char **envp) {
     g_loaded_libs = NULL;
     g_prog = NULL;
 
-    elfobj_t *patch_file, *extra_lib;
+    elfobj_t *patch_file;
 
     deluge_args_t args;
     g_args = &args;
@@ -1147,11 +1148,6 @@ int main(int argc, char **argv, char **envp) {
 
     if ((g_prog = open_elf(g_args->name, 0, 1, VISIBILITY_INIT)) == NULL) {
         raise_error("%s: failed to open file", g_args->name);
-        return 1;
-    }
-
-    if (g_args->extra_lib && !(extra_lib = open_elf(g_args->extra_lib, ET_DYN, 0, VISIBILITY_INIT))) {
-        raise_error("%s: failed to open extra library", g_args->extra_lib);
         return 1;
     }
 
@@ -1195,8 +1191,6 @@ int main(int argc, char **argv, char **envp) {
 
     close_elf(g_prog);
 
-    if (g_args->extra_lib)
-        close_elf(extra_lib);
     if (g_args->patch_file)
         close_elf(patch_file);
 

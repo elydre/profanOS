@@ -306,8 +306,8 @@ def build_disk_elfs():
         required_libs = get_required_libs(name, liblist)
 
         print_and_exec(f"{CC} -c {name} -o {fname}.o {ZAPP_FLAGS}")
-        print_and_exec(f"{LD} {LD_FLAGS} -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -o " +
-                       f"{fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc " +
+        print_and_exec(f"{LD} {LD_FLAGS} -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -rpath {OUT_DIR}/zlibs " +
+                       f"-o {fname}.elf {OUT_DIR}/make/entry_elf.o {fname}.o -lc " +
                        ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
         print_and_exec(f"rm {fname}.o")
         total -= 1
@@ -342,7 +342,7 @@ def build_disk_elfs():
             if lib not in libs_name:
                 cprint(COLOR_EROR, f"maketool: {name}: library '{lib}' not found\n{' '*10}available: {libs_name}")
                 os._exit(1)
-        print_and_exec(f"{LD} {LD_FLAGS} -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs " +
+        print_and_exec(f"{LD} {LD_FLAGS} -T {TOOLS_DIR}/link_elf.ld -L {OUT_DIR}/zlibs -rpath {OUT_DIR}/zlibs " +
                           f"-o {OUT_DIR}/{name}.elf {OUT_DIR}/make/entry_elf.o {' '.join(objs)} -lc " +
                             ' '.join([f'-l{lib[3:]}' for lib in required_libs]))
 
@@ -657,9 +657,11 @@ def gen_disk(force=True, with_src=False):
 
         if isinstance(HDD_MAP[dir_name], str):
             if dir_name == "lib":
-                os.makedirs(f"{OUT_DIR}/disk/{dir_name}/{ZLIBS_MOD}")
-                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/*.* {OUT_DIR}/disk/{dir_name}")
-                print_and_exec(f"cp -r {HDD_MAP[dir_name]}/{ZLIBS_MOD}/*.* {OUT_DIR}/disk/{dir_name}/modules")
+                for elm in os.listdir(HDD_MAP[dir_name]):
+                    if not os.path.isdir(f"{HDD_MAP[dir_name]}/{elm}"):
+                        print_and_exec(f"cp {HDD_MAP[dir_name]}/{elm} {OUT_DIR}/disk/{dir_name}")
+                    elif not elm.startswith("lib"):
+                        print_and_exec(f"cp -r {HDD_MAP[dir_name]}/{elm} {OUT_DIR}/disk/{dir_name}")
 
             elif dir_name == "bin":
                 for elm in os.listdir(HDD_MAP[dir_name]):

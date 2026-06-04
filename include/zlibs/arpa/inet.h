@@ -23,4 +23,6 @@ uint16_t ntohs(uint16_t netshort);
 int inet_aton(const char *str, struct in_addr *dest);
 int inet_pton(int af, const char *s, void *a0);
 
+char *inet_ntoa(struct in_addr in);
+
 #endif

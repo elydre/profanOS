@@ -1,7 +1,7 @@
 /*****************************************************************************\
-|   === in.h : 2026 ===                                                       |
+|   === ioctl.h : 2026 ===                                                    |
 |                                                                             |
-|    Implementation of the netinet/in.h header file from libC      .pi0iq.    |
+|    Implementation of the sys/ioctl.h header file from libC       .pi0iq.    |
 |                                                                 d"  . `'b   |
 |    This file is part of profanOS and is released under          q. /|\  "   |
 |    the terms of the GNU General Public License                   `// \\     |
@@ -9,19 +9,15 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#ifndef _NETINET_IN_H
-#define _NETINET_IN_H
+#ifndef _SYS_IOCTL_H
+#define _SYS_IOCTL_H
 
-#include <sys/socket.h>
+#include <profan/minimal.h>
 
-struct in_addr {
-    in_addr_t s_addr;
-};
+_BEGIN_C_FILE
 
-struct sockaddr_in {
-    sa_family_t sin_family;
-    in_port_t sin_port;
-    struct in_addr sin_addr;
-};
+int ioctl(int fd, unsigned long op, ...);
+
+_END_C_FILE
 
 #endif

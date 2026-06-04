@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <limits.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
 
@@ -290,6 +291,24 @@ char *getcwd(char *buf, size_t size) {
 
     strcpy(buf, g_wd_path);
     return buf;
+}
+
+int getentropy(void *buffer, size_t length) {
+    int fd = open("/dev/urandom", O_RDONLY);
+    if (fd < 0) {
+        errno = EIO;
+        return -1;
+    }
+
+    ssize_t r = read(fd, buffer, length);
+    close(fd);
+
+    if (r < 0) {
+        errno = EIO;
+        return -1;
+    }
+
+    return 0;
 }
 
 // without user system, we just return 0 for "root"

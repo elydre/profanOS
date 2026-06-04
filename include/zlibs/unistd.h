@@ -78,6 +78,7 @@ int      fsync(int a);
 int      ftruncate(int a, off_t b);
 char    *getcwd(char *a, size_t b);
 gid_t    getegid(void);
+int      getentropy(void *buffer, size_t length);
 uid_t    geteuid(void);
 gid_t    getgid(void);
 int      getgroups(int a, gid_t *b);

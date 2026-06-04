@@ -690,196 +690,41 @@ float strtof(const char *str, char **end) {
     return (float) strtod((char *) str, end);
 }
 
-long int strtol(const char *str, char **end, int base) {
-    const char *s;
-    unsigned long acc;
-    char c;
-    unsigned long cutoff;
-    int neg, any, cutlim;
+long strtol(const char *nptr, char **endptr, int base) {
+    const char *s = nptr;
+    unsigned long acc, cutoff;
+    int neg = 0, c, any, cutlim;
 
-    /*
-     * Skip white space and pick up leading +/- sign if any.
-     * If base is 0, allow 0x for hex and 0 for octal, else
-     * assume decimal; if base is already 16, allow 0x.
-     */
-    s = str;
-    do {
-        c = *s++;
-    } while (isspace((unsigned char) c));
-    if (c == '-') {
-        neg = 1;
-        c = *s++;
-    } else {
-        neg = 0;
-        if (c == '+')
-            c = *s++;
-    }
-    if ((base == 0 || base == 16) &&
-        c == '0' && (*s == 'x' || *s == 'X') &&
-        ((s[1] >= '0' && s[1] <= '9') ||
-        (s[1] >= 'A' && s[1] <= 'F') ||
-        (s[1] >= 'a' && s[1] <= 'f'))) {
-        c = s[1];
-        s += 2;
-        base = 16;
-    }
-    if (base == 0)
-        base = c == '0' ? 8 : 10;
-    acc = any = 0;
-    if (base < 2 || base > 36)
-        goto noconv;
-
-    /*
-     * Compute the cutoff value between legal numbers and illegal
-     * numbers.  That is the largest legal value, divided by the
-     * base.  An input number that is greater than this value, if
-     * followed by a legal input character, is too big.  One that
-     * is equal to this value may be valid or not; the limit
-     * between valid and invalid numbers is then based on the last
-     * digit.  For instance, if the range for longs is
-     * [-2147483648..2147483647] and the input base is 10,
-     * cutoff will be set to 214748364 and cutlim to either
-     * 7 (neg==0) or 8 (neg==1), meaning that if we have accumulated
-     * a value > 214748364, or equal but the next digit is > 7 (or 8),
-     * the number is too big, and we will return a range error.
-     *
-     * Set 'any' if any `digits' consumed; make it negative to indicate
-     * overflow.
-     */
-    cutoff = neg ? (unsigned long) - (LONG_MIN + LONG_MAX) + LONG_MAX
-        : LONG_MAX;
-    cutlim = cutoff % base;
-    cutoff /= base;
-    for ( ; ; c = *s++) {
-        if (c >= '0' && c <= '9')
-            c -= '0';
-        else if (c >= 'A' && c <= 'Z')
-            c -= 'A' - 10;
-        else if (c >= 'a' && c <= 'z')
-            c -= 'a' - 10;
-        else
-            break;
-        if (c >= base)
-            break;
-        if ((any < 0 || acc > cutoff || acc == cutoff) && c > cutlim)
-            any = -1;
-        else {
-            any = 1;
-            acc *= base;
-            acc += c;
-        }
-    }
-    if (any < 0) {
-        acc = neg ? LONG_MIN : LONG_MAX;
-        errno = ERANGE;
-    } else if (!any) {
-noconv:
-        errno = EINVAL;
-    } else if (neg)
-        acc = -acc;
-    if (end != NULL)
-        *end = (char *)(any ? s - 1 : str);
-    return acc;
-}
-
-long long strtoll(const char *str, char **end, int base) {
-    return (PROFAN_FNI, 0);
-}
-
-unsigned long strtoul(const char *nptr, char **endptr, register int base) {
-    register const char *s = nptr;
-    register unsigned long acc;
-    register int c;
-    register unsigned long cutoff;
-    register int neg = 0, any, cutlim;
-
-    // See strtol for comments as to the logic used.
     do {
         c = *s++;
     } while (isspace(c));
+
     if (c == '-') {
         neg = 1;
         c = *s++;
-    } else if (c == '+')
+    } else if (c == '+') {
         c = *s++;
+    }
+
     if ((base == 0 || base == 16) &&
-        c == '0' && (*s == 'x' || *s == 'X')) {
+                c == '0' && (*s == 'x' || *s == 'X')) {
         c = s[1];
         s += 2;
         base = 16;
     }
+
     if (base == 0)
         base = c == '0' ? 8 : 10;
-    cutoff = (unsigned long) ULONG_MAX / (unsigned long) base;
-    cutlim = (unsigned long) ULONG_MAX % (unsigned long) base;
+
+    cutoff = neg ? -(unsigned long) LONG_MIN : LONG_MAX;
+    cutlim = cutoff % (unsigned long) base;
+    cutoff /= (unsigned long) base;
+
     for (acc = 0, any = 0;; c = *s++) {
         if (isdigit(c))
             c -= '0';
         else if (isalpha(c))
             c -= isupper(c) ? 'A' - 10 : 'a' - 10;
-        else
-            break;
-        if (c >= base)
-            break;
-        if ((any < 0 || acc > cutoff || acc == cutoff) && c > cutlim)
-            any = -1;
-        else {
-            any = 1;
-            acc *= base;
-            acc += c;
-        }
-    }
-    if (any < 0) {
-        acc = ULONG_MAX;
-        errno = ERANGE;
-    } else if (neg)
-        acc = -acc;
-    if (endptr != 0)
-        *endptr = (char *)(any ? s - 1 : nptr);
-    return (acc);
-}
-
-unsigned long long strtoull(const char *restrict nptr, char **restrict endptr, int base) {
-    const char *s;
-    unsigned long long acc;
-    char c;
-    unsigned long long cutoff;
-    int neg, any, cutlim;
-
-    s = nptr;
-    do {
-        c = *s++;
-    } while (isspace((unsigned char)c));
-    if (c == '-') {
-        neg = 1;
-        c = *s++;
-    } else {
-        neg = 0;
-        if (c == '+')
-            c = *s++;
-    }
-    if ((base == 0 || base == 16) &&
-        c == '0' && (*s == 'x' || *s == 'X')) {
-        c = s[1];
-        s += 2;
-        base = 16;
-    }
-    if (base == 0)
-        base = c == '0' ? 8 : 10;
-    acc = any = 0;
-    if (base < 2 || base > 36)
-        goto noconv;
-
-    cutoff = ULLONG_MAX / base;
-    cutlim = ULLONG_MAX % base;
-
-    for ( ; ; c = *s++) {
-        if (c >= '0' && c <= '9')
-            c -= '0';
-        else if (c >= 'A' && c <= 'Z')
-            c -= 'A' - 10;
-        else if (c >= 'a' && c <= 'z')
-            c -= 'a' - 10;
         else
             break;
         if (c >= base)
@@ -892,29 +737,208 @@ unsigned long long strtoull(const char *restrict nptr, char **restrict endptr, i
             acc += c;
         }
     }
+
     if (any < 0) {
-        acc = ULLONG_MAX;
+        acc = neg ? LONG_MIN : LONG_MAX;
         errno = ERANGE;
-    } else if (!any) {
-noconv:
-        errno = EINVAL;
-    } else if (neg)
+    } else if (neg) {
         acc = -acc;
-    if (endptr != NULL)
-        *endptr = (char *)(any ? s - 1 : nptr);
+    }
+
+    if (endptr != 0)
+        *endptr = (char *) (any ? s - 1 : nptr);
+
+    return acc;
+}
+
+long long strtoll(const char *nptr, char **endptr, int base) {
+    const char *s = nptr;
+    unsigned long long acc, cutoff;
+    int neg = 0, c, any, cutlim;
+
+    do {
+        c = *s++;
+    } while (isspace(c));
+
+    if (c == '-') {
+        neg = 1;
+        c = *s++;
+    } else if (c == '+') {
+        c = *s++;
+    }
+
+    if ((base == 0 || base == 16) &&
+                c == '0' && (*s == 'x' || *s == 'X')) {
+        c = s[1];
+        s += 2;
+        base = 16;
+    }
+
+    if (base == 0)
+        base = c == '0' ? 8 : 10;
+
+    cutoff = neg ? -(unsigned long long) LLONG_MIN : LLONG_MAX;
+    cutlim = cutoff % (unsigned long long) base;
+    cutoff /= (unsigned long long) base;
+
+    for (acc = 0, any = 0;; c = *s++) {
+        if (isdigit(c))
+            c -= '0';
+        else if (isalpha(c))
+            c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+        else
+            break;
+        if (c >= base)
+            break;
+        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+            any = -1;
+        else {
+            any = 1;
+            acc *= base;
+            acc += c;
+        }
+    }
+
+    if (any < 0) {
+        acc = neg ? LLONG_MIN : LLONG_MAX;
+        errno = ERANGE;
+    } else if (neg) {
+        acc = -acc;
+    }
+
+    if (endptr != 0)
+        *endptr = (char *) (any ? s - 1 : nptr);
+
     return (acc);
 }
 
-static void I_swap(char *x, char *y) {
-    char t = *x;
-    *x = *y;
-    *y = t;
+unsigned long strtoul(const char *nptr, char **endptr, int base) {
+    const char *s = nptr;
+    unsigned long acc, cutoff;
+    int neg = 0, c, any, cutlim;
+
+    do {
+        c = *s++;
+    } while (isspace(c));
+
+    if (c == '-') {
+        neg = 1;
+        c = *s++;
+    } else if (c == '+') {
+        c = *s++;
+    }
+
+    if ((base == 0 || base == 16) &&
+                c == '0' && (*s == 'x' || *s == 'X')) {
+        c = s[1];
+        s += 2;
+        base = 16;
+    }
+
+    if (base == 0)
+        base = c == '0' ? 8 : 10;
+
+    cutoff = (unsigned long) ULONG_MAX / (unsigned long) base;
+    cutlim = (unsigned long) ULONG_MAX % (unsigned long) base;
+
+    for (acc = 0, any = 0;; c = *s++) {
+        if (isdigit(c))
+            c -= '0';
+        else if (isalpha(c))
+            c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+        else
+            break;
+        if (c >= base)
+            break;
+        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+            any = -1;
+        else {
+            any = 1;
+            acc *= base;
+            acc += c;
+        }
+    }
+
+    if (any < 0) {
+        acc = ULONG_MAX;
+        errno = ERANGE;
+    } else if (neg) {
+        acc = -acc;
+    }
+
+    if (endptr != 0)
+        *endptr = (char *) (any ? s - 1 : nptr);
+
+    return (acc);
 }
 
-// Function to reverse `buffer[i..j]`
-static char *I_reverse(char *buffer, int i, int j) {
+unsigned long long strtoull(const char *nptr, char **endptr, int base) {
+    const char *s = nptr;
+    unsigned long long acc, cutoff;
+    int neg = 0, c, any, cutlim;
+
+    do {
+        c = *s++;
+    } while (isspace(c));
+
+    if (c == '-') {
+        neg = 1;
+        c = *s++;
+    } else if (c == '+') {
+        c = *s++;
+    }
+
+    if ((base == 0 || base == 16) &&
+        c == '0' && (*s == 'x' || *s == 'X')) {
+        c = s[1];
+        s += 2;
+        base = 16;
+    }
+
+    if (base == 0)
+        base = c == '0' ? 8 : 10;
+
+    cutoff = (unsigned long long) ULLONG_MAX / (unsigned long long) base;
+    cutlim = (unsigned long long) ULLONG_MAX % (unsigned long long) base;
+
+    for (acc = 0, any = 0;; c = *s++) {
+        if (isdigit(c))
+            c -= '0';
+        else if (isalpha(c))
+            c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+        else
+            break;
+        if (c >= base)
+            break;
+        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+            any = -1;
+        else {
+            any = 1;
+            acc *= base;
+            acc += c;
+        }
+    }
+
+    if (any < 0) {
+        acc = ULLONG_MAX;
+        errno = ERANGE;
+    } else if (neg) {
+        acc = -acc;
+    }
+
+    if (endptr != 0)
+        *endptr = (char *) (any ? s - 1 : nptr);
+
+    return (acc);
+}
+
+static char *itoa_reverse(char *buffer, int i, int j) {
     while (i < j) {
-        I_swap(&buffer[i++], &buffer[j--]);
+        char temp = buffer[i];
+        buffer[i] = buffer[j];
+        buffer[j] = temp;
+        i++;
+        j--;
     }
 
     return buffer;
@@ -958,5 +982,5 @@ char *profan_itoa(int value, char *buffer, int base) {
     buffer[i] = '\0'; // null terminate string
 
     // reverse the string and return it
-    return I_reverse(buffer, 0, i - 1);
+    return itoa_reverse(buffer, 0, i - 1);
 }

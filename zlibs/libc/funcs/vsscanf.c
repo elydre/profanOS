@@ -41,6 +41,9 @@ int vsscanf(const char *str, const char *format, va_list args) {
             if (*f == 'h' || *f == 'l' || *f == 'L')
                 size = *f++;
 
+            if (size == 'l' && *f == 'l')
+                size = '+', ++f; // 'll' is represented as '+'
+
             if (*f != '[' && *f != 'c' && *f != 'n')
                 while (isspace((int)(unsigned int)*s))
                     ++s;
@@ -81,21 +84,25 @@ int vsscanf(const char *str, const char *format, va_list args) {
                     *b = '\0';
                     if (do_cnv) {
                         if (*f == 'd' || *f == 'i') {
-                            long data = strtol(buf, NULL, base);
+                            long long data = strtoll(buf, NULL, base);
                             if (size == 'h')
                                 *va_arg(args, short *) = (short)data;
                             else if (size == 'l')
-                                *va_arg(args, long *) = data;
+                                *va_arg(args, long *) = (long) data;
+                            else if (size == '+') // 'll'
+                                *va_arg(args, long long *) = data;
                             else
                                 *va_arg(args, int *) = (int)data;
                         } else {
-                            unsigned long data = strtoul(buf, NULL, base);
+                            unsigned long long data = strtoull(buf, NULL, base);
                             if (size == 'p')
-                                *va_arg(args, void **) = (void *)data;
+                                *va_arg(args, void **) = (void *)(uint32_t) data;
                             else if (size == 'h')
-                                *va_arg(args, unsigned short *) = (unsigned short)data;
+                                *va_arg(args, unsigned short *) = (unsigned short) data;
                             else if (size == 'l')
-                                *va_arg(args, unsigned long *) = data;
+                                *va_arg(args, unsigned long *) = (unsigned long) data;
+                            else if (size == '+') // 'll'
+                                *va_arg(args, unsigned long long *) = data;
                             else
                                 *va_arg(args, unsigned int *) = (unsigned int)data;
                         }
@@ -227,6 +234,8 @@ int vsscanf(const char *str, const char *format, va_list args) {
                         *va_arg(args, short *) = (short)(s - str);
                     else if (size == 'l')
                         *va_arg(args, long *) = (long)(s - str);
+                    else if (size == '+') // 'll'
+                        *va_arg(args, long long *) = (long long)(s - str);
                     else
                         *va_arg(args, int *) = (int)(s - str);
                     break;
@@ -239,6 +248,7 @@ int vsscanf(const char *str, const char *format, va_list args) {
                 }
 
                 default:
+                    fprintf(stderr, "vsscanf: unknown format specifier '%c'\n", *f);
                     return FAIL;
             }
         }
