@@ -58,7 +58,6 @@ int main(void)
     "\r\n"
     "\r\n";
     send(sock, request, strlen(request), 0);
-    shutdown(sock, SHUT_WR);
 
     while (1) {
         char buf[4096 + 1];

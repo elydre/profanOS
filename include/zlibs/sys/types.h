@@ -37,4 +37,7 @@ typedef uint32_t timer_t;     // timer ID returned by timer_create()
 typedef uint32_t uid_t;       // user IDs
 typedef uint32_t useconds_t;  // time in microseconds
 
+// Some program uses this header to include select and its types
+#include <sys/select.h>
+
 #endif

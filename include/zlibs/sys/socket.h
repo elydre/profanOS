@@ -22,6 +22,8 @@
 #define AF_PACKET   17
 #define AF_NETLINK  16
 
+#define PF_INET AF_INET
+
 #define SOCK_STREAM     1
 #define SOCK_DGRAM      2
 #define SOCK_RAW        3

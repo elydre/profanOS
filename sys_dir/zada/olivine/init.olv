@@ -81,6 +81,3 @@ FUNC stp
 
     debug rbin
 END
-
-sleep 2
-dlg test
