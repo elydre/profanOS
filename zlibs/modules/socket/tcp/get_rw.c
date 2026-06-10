@@ -16,14 +16,11 @@ int socket_tcp_get_rw(socket_t *sock) {
     tcp_t *data = sock->data;
 
     if (data->state == TCP_STATE_OPEN) {
-        if (data->recv_len > 0 && !TCP_GET_INFO(data, TCP_RECV_FIN_MASK))
+        if (data->recv_len > 0 || TCP_GET_INFO(data, TCP_RECV_FIN_MASK))
             res |= FM_READ;
         if (data->tosend_len < data->tosend_max && !TCP_GET_INFO(data, TCP_SEND_FIN_MASK))
             res |= FM_WRITE;
     }
-
-    if (data->state == TCP_STATE_SYN_SENT)
-        res |= FM_WRITE;
 
     return res;
 }

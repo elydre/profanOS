@@ -10,6 +10,7 @@
 \*****************************************************************************/
 
 #include <modules/socket.h>
+#include <fcntl.h> // For O_NONBLOCK
 #include <errno.h>
 
 ssize_t socket_recvfrom(recvfrom_arg_t *args) {
@@ -19,13 +20,19 @@ ssize_t socket_recvfrom(recvfrom_arg_t *args) {
     int flags = args->flags;
     struct sockaddr *src_addr = args->src_addr;
     socklen_t *addrlen = args->addrlen;
-    socket_t *sock = socket_find_fd(sockfd);
+    fd_data_t *data = fm_fd_to_data(sockfd);
+    if (!data || data->type != TYPE_SOCK)
+        return -ENOTSOCK;
+    socket_t *sock = socket_find_id(data->sock_id);
     if (!sock)
         return -ENOTSOCK;
 
     protocol_t *prot = socket_find_protocol(sock->type);
     if (!prot || !prot->recvfrom)
         return -EINVAL;
+
+    if (data->flags & O_NONBLOCK)
+        flags |= MSG_DONTWAIT;
 
      return prot->recvfrom(sock, buf, len, flags, src_addr, addrlen);
 }
