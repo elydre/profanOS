@@ -317,7 +317,7 @@ int pci_enable_msi(pci_device_t *pci) {
         pci_write_config(pci, cap_ptr + 8, data);
     }
 
-    msi_ctrl |= 0x1; // Enable MSI
+    msi_ctrl |= 0x1; // enable MSI
     pci_write_config_u16(pci, cap_ptr + 2, msi_ctrl);
 
     return pci->msi_intno;
@@ -342,7 +342,7 @@ int pci_disable_msi(pci_device_t *pci) {
         return -1; // no MSI capability
 
     uint16_t msi_ctrl = pci_read_config_u16(pci, cap_ptr + 2);
-    msi_ctrl &= ~0x1; // Disable MSI
+    msi_ctrl &= ~0x1; // disable MSI
     pci_write_config_u16(pci, cap_ptr + 2, msi_ctrl);
 
     if (IRQ_IS_MSI(pci->msi_intno)) // should always be true
@@ -359,6 +359,6 @@ void lapic_eoi(void) {
 
     scuba_call_map((void *) LAPIC_DEFAULT_BASE, (void *) LAPIC_DEFAULT_BASE, 0);
     volatile uint32_t *lapic = (volatile uint32_t *) LAPIC_DEFAULT_BASE;
-    
-    lapic[0xB0 / 4] = 0; // Write to EOI register
+
+    lapic[0xB0 / 4] = 0; // write to EOI register
 }

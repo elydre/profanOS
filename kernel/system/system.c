@@ -57,7 +57,7 @@ char *interrupts[] = {
 void kernel_exit_current(void) {
     uint32_t pid_list[PROCESS_MAX]; // it's a define
     int pid_list_len = process_list_all(pid_list, PROCESS_MAX);
-    uint32_t pid, state;
+    uint32_t pid;
 
     // sort by pid
     for (int i = 0; i < pid_list_len; i++) {
@@ -72,9 +72,9 @@ void kernel_exit_current(void) {
 
     for (int i = pid_list_len - 1; i >= 0; i--) {
         pid = pid_list[i];
-        if (pid < 2) continue;
-        state = process_get_state(pid);
-        if (state == PROC_STATE_INQ || state == PROC_STATE_SLP) {
+        if (pid < 3)
+            return;
+        if (process_get_state(pid) > PROC_STATE_ZMB) {
             process_kill(pid, 143);
             return;
         }
@@ -133,10 +133,12 @@ void handle_pending_msi(void) {
         for (int i = 0; i < 5; i++) {
             if (msi_queue[i].intno == -1)
                 continue;
-            mem_copy(&msi_queue[msi_queue_len].r, &msi_queue[i].r, sizeof(registers_t));
             kprintf("Moved interrupt %d from queue index %d to %d\n", msi_queue[i].intno, i, msi_queue_len);
-            msi_queue[msi_queue_len].intno = msi_queue[i].intno;
-            msi_queue[i].intno = -1;
+            if (i != msi_queue_len) {
+                mem_copy(&msi_queue[msi_queue_len].r, &msi_queue[i].r, sizeof(registers_t));
+                msi_queue[msi_queue_len].intno = msi_queue[i].intno;
+                msi_queue[i].intno = -1;
+            }
             msi_queue_len++;
         }
         asm volatile("sti");

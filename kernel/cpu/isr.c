@@ -134,7 +134,7 @@ void irq_handler(registers_t *r) {
         for (int i = 0; i < IRQ_MSI_COUNT; i++) {
             if (msi_queue[i].intno == (int) r->int_no)
                 sys_fatal("MSI %d interrupt already in queue", r->int_no);
-            
+
             if (msi_queue[i].intno != -1) {
                 if (i == IRQ_MSI_COUNT - 1)
                     sys_fatal("MSI queue is full");

@@ -405,12 +405,12 @@ irq15:
     push byte 47
     jmp irq_common_stub
 
+; User defined MSI interrupts
 irq28:
     push byte 28
     push byte 60
     jmp irq_common_stub
 
-; User defined MSI interrupts
 irq29:
     push byte 29
     push byte 61

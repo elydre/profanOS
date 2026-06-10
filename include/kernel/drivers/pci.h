@@ -30,7 +30,7 @@ typedef struct {
     uint8_t interrupt_pin;
 
     // internal fields
-    int msi_intno; // if MSI enabled, the assigned interrupt number    
+    int msi_intno; // if MSI enabled, the assigned interrupt number
 } pci_device_t;
 
 typedef struct {
