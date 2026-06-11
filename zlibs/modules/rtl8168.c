@@ -254,8 +254,10 @@ void rtl8169_recv(void) {
         eth_recv_packet((void*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), pkt_length);
 
     _next_desc:
+        desc->command = RTL8169_DESC_CMD_OWN | RTL8169_RX_BUFFER_SIZE;
+        if (nic->rx_current == RTL8169_RX_DESC_COUNT - 1)
+            desc->command |= RTL8169_DESC_CMD_EOR;
         nic->rx_current = (nic->rx_current + 1) % RTL8169_RX_DESC_COUNT;
-        desc->command |= RTL8169_DESC_CMD_OWN;
     }
 }
 
@@ -283,11 +285,11 @@ void rtl8169_irq(registers_t *regs) {
     }
 
     if (isr & RTL8169_ISR_TOK) {
-        // LOG("[DEBUG] WAWWWWW packet transmitted successfully\n");
+        // LOG("[DEBUG] packet transmitted successfully\n");
     }
 
     if (isr & RTL8169_ISR_ROK) {
-        // LOG("[DEBUG] WAWWWWW new packet received\n");
+        // LOG("[DEBUG] new packet received\n");
         rtl8169_recv();
     }
 
@@ -331,9 +333,6 @@ int rtl8169_send(const void *buffer, uint16_t size) {
     RTL8169_WRITE8(RTL8169_REG_TPPoll, RTL8169_TPPoll_NPQ);
 
     // LOG("[DEBUG] Sent packet of length %d\n", size);
-
-    // nnic->stats.tx_bytes += size;
-    // nnic->stats.tx_packets++;
 
     return size;
 }
@@ -442,10 +441,6 @@ pci_findme_t this_eth_ids[] = {
     {0x16ec, 0x0116},
 };
 
-/**
- * @brief Initialize a RTL8169 NIC
- * @param device The PCI device
- */
 int __init(void) {
     pci_device_t *device = pci_find_array(this_eth_ids, sizeof(this_eth_ids) / sizeof(pci_findme_t));
 
@@ -523,7 +518,7 @@ int __init(void) {
     // Enable receive and transmit
     RTL8169_WRITE8(RTL8169_REG_CR, RTL8169_CR_RE | RTL8169_CR_TE);
 
-    RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF); // this is what sends me the ISR with 0
+    RTL8169_WRITE16(RTL8169_REG_ISR, 0xFFFF);
     RTL8169_WRITE16(RTL8169_REG_IMR, 0xFFFF);
 
     // Enable interrupts
