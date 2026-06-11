@@ -119,7 +119,7 @@ void handle_pending_msi(void) {
 
     while (msi_queue_len > 0) {
         for (int i = msi_queue_len - 1; i >= 0; i--) {
-            interrupt_handler_t handler = interrupt_handlers[msi_queue[i].r.int_no];
+            interrupt_handler_t handler = interrupt_handlers[msi_queue[i].intno];
 
             if (handler != NULL)
                 handler(&msi_queue[i].r);
