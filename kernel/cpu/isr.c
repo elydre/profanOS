@@ -135,16 +135,14 @@ void irq_handler(registers_t *r) {
             if (msi_queue[i].intno == (int) r->int_no)
                 sys_fatal("MSI %d interrupt already in queue", r->int_no);
 
-            if (msi_queue[i].intno != -1) {
-                if (i == IRQ_MSI_COUNT - 1)
-                    sys_fatal("MSI queue is full");
+            if (msi_queue[i].intno != -1)
                 continue;
-            }
 
             msi_queue[i].intno = r->int_no;
             mem_copy(&msi_queue[i].r, r, sizeof(registers_t));
             return;
         }
+        sys_fatal("MSI queue is full");
     }
 
     if (r->int_no == 32) {
