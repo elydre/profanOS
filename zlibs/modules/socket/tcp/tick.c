@@ -17,10 +17,18 @@
 
 #define TCP_TIMEOUT 500 // 500ms
 #define TCP_MAX_RETRIES 5
+#define TCP_TIMEOUT_ORPHAN (5 * 60 * 1000) // 5 minutes
 
 void socket_tcp_tick(socket_t *sock_ptr) {
     uint32_t now = timer_get_ms();
     tcp_t *sock = sock_ptr->data;
+
+    if (sock_ptr->ref_count == 0 && sock->when_orphaned == 0)
+        sock->when_orphaned = now;
+
+    if (sock_ptr->ref_count == 0 && sock->when_orphaned + TCP_TIMEOUT_ORPHAN < now)
+        sock->state = TCP_STATE_CLOSED;
+
     if (sock->state == TCP_STATE_CLOSED && sock_ptr->ref_count == 0) {
         tcp_free_port(htons(sock->local_port));
         free(sock->recv);
@@ -64,6 +72,8 @@ void socket_tcp_tick(socket_t *sock_ptr) {
     }
 
     if (sock->retries > TCP_MAX_RETRIES) {
-        // !TODO RESET
+        tcp_send_reset(sock);
+        sock->state = TCP_STATE_CLOSED;
+        TCP_SET_INFO(sock, TCP_CONNECTION_RST_MASK);
     }
 }

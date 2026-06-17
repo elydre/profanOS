@@ -85,7 +85,8 @@ ssize_t socket_tcp_recvfrom(socket_t *sock, void *buf, size_t len,
     (void)addrlen;
 
     tcp_t *data = sock->data;
-
+    if (TCP_GET_INFO(data, TCP_CONNECTION_RST_MASK))
+        return -ECONNRESET;
     if (data->state == TCP_STATE_CLOSED)
         return -EAGAIN;
     if (data->recv == NULL)

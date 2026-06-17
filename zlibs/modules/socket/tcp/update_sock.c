@@ -32,11 +32,14 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                 TCP_CLEAR_INFO(sock, TCP_WAIT_ACK_MASK);
 
             }
+            else if (packet->flags & TCP_FLAG_RST) {
+                sock->state = TCP_STATE_CLOSED;
+                return ;
+            }
             break;
         case TCP_STATE_OPEN:
             if (packet->data_len > 0) {
                 if (packet->seq - sock->first_ack < sock->current_ack - sock->first_ack) {
-                    // TODO check if data overlap after current_ack, if so, we need to accept the new data and reack it
                     // this is a retransmission, ignore it reack it
                     tcp_send_ack(sock);
                 }
@@ -60,16 +63,13 @@ void tcp_on_packet_recv(tcp_t *sock, tcp_packet_t *packet) {
                size_t data_len = TCP_MIN(sock->tosend_len, TCP_MAX_SEND_ONCE);
                if (packet->ack - sock->first_seq <= sock->current_seq - sock->first_seq) {
                    // ignore a past ack
-                   kprintf_serial("PAST\n");
                }
                else if (packet->ack - sock->first_seq > sock->current_seq - sock->first_seq + data_len +
                             (TCP_GET_INFO(sock, TCP_SEND_FIN_MASK) ? 1 : 0)) {
                    // this is too far in the future
-                   kprintf_serial("FUTUR\n");
                }
                else {
                     // present ack
-                    kprintf_serial("PRESENT\n");
                     int to_remove = (packet->ack - sock->first_seq) - (sock->current_seq - sock->first_seq);
                     int do_ack_fin = 0;
                     if ((size_t)to_remove > sock->tosend_len && TCP_GET_INFO(sock, TCP_SEND_FIN_MASK)) {

@@ -62,5 +62,8 @@ int socket_tcp_connect(socket_t *sock, const struct sockaddr *addr, socklen_t ad
     while (data->state == TCP_STATE_SYN_SENT)
         process_sleep(process_get_pid(), 10);
 
+    if (data->state != TCP_STATE_OPEN)
+        return -ECONNREFUSED;
+
     return 0;
 }

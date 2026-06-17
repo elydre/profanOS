@@ -19,8 +19,6 @@
 int socket(int domain, int type, int protocol) {
     int ret = socket_socket(domain, type, protocol);
 
-    serial_debug("socket: %d\n", ret);
-
     if (ret >= 0)
         return ret;
 
@@ -31,8 +29,6 @@ int socket(int domain, int type, int protocol) {
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     int ret = socket_bind(sockfd, addr, addrlen);
 
-    serial_debug("bind: %d\n", ret);
-
     if (ret >= 0)
         return ret;
 
@@ -42,8 +38,6 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     int ret = socket_connect(sockfd, addr, addrlen);
-
-    serial_debug("connect: %d\n", ret);
 
     if (ret >= 0)
         return ret;
@@ -66,8 +60,6 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
     int ret = socket_sendto(&args);
 
-    serial_debug("sendto: %d\n", ret);
-
     if (ret >= 0)
         return ret;
 
@@ -87,8 +79,6 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *
 
     int ret = socket_recvfrom(&args);
 
-    serial_debug("recvfrom: %d\n", ret);
-
     if (ret >= 0)
         return ret;
 
@@ -106,8 +96,6 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
 
 int shutdown(int sockfd, int how) {
     int ret = socket_shutdown(sockfd, how);
-
-    serial_debug("shutdown: %d\n", ret);
 
     if (ret >= 0)
         return ret;
@@ -131,8 +119,8 @@ int socketpair(int domain, int type, int protocol, int sv[2]) {
 #include <string.h>
 
 int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) {
-    printf("getsockopt: level=%d optname=%d optval=%p optlen=%p\n", level, optname, optval, optlen);
     uint32_t val;
+
     switch (optname) {
         case SO_ERROR:
             val = 0;
@@ -154,19 +142,14 @@ int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optl
         *optlen = 0;
     }
     return 0;
-    // return (PROFAN_FNI, -1);
 }
 
 int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) {
-    printf("setsockopt: level=%d optname=%d optval=%p optlen=%d\n", level, optname, optval, optlen);
-    return 0;
-    // return (PROFAN_FNI, -1);
+    return 0; // TODO
 }
 
 int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
     int ret = socket_getname(sockfd, 1, addr, addrlen);
-
-    serial_debug("getsockname: %d\n", ret);
 
     if (ret >= 0)
         return ret;
@@ -177,8 +160,6 @@ int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 
 int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
     int ret = socket_getname(sockfd, 0, addr, addrlen);
-
-    serial_debug("getpeername: %d\n", ret);
 
     if (ret >= 0)
         return ret;

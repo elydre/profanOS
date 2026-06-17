@@ -40,6 +40,7 @@
 #define TCP_RECV_FIN_MASK (1 << 3)
 #define TCP_SEND_FIN_MASK (1 << 4)
 #define TCP_FIN_ACKED_MASK (1 << 5)
+#define TCP_CONNECTION_RST_MASK (1 << 6)
 
 #define TCP_GET_INFO(X, MASK) ((X)->mask_info & MASK)
 #define TCP_SET_INFO(X, MASK) ((X)->mask_info |= MASK)
@@ -70,6 +71,7 @@ typedef struct {
     uint8_t state;
     uint8_t retries;
     uint8_t mask_info;
+    uint32_t when_orphaned; // more like profaned
  } tcp_t;
 
 typedef struct {
