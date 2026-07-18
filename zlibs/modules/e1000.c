@@ -347,7 +347,9 @@ void e1000_tx_init(e1000_t *e1000) {
     pci_write_cmd_u32(&(e1000->pci), 0, REG_TIPG,  0x0060200A);
 }
 
+static int test();
 int __init(void) {
+	test();
     if (scan_pci_for_e1000(&g_e1000))
         return 2;
 
@@ -381,3 +383,198 @@ void *__module_func_array[] = {
     (void *) 0xF3A3C4D4, // magic
     // no functions exported
 };
+
+#define size_t uint32_t
+
+typedef struct {
+	char signature[8];
+	uint8_t checksum;
+	char OEMID[6];
+	uint8_t revision;
+	uint32_t rsdt_addr;
+} __attribute__ ((packed)) RSDP_t;
+
+typedef struct {
+	char signature[4];
+	uint32_t length;
+	uint8_t revision;
+	uint8_t checksum;
+	char OEMID[6];
+	char OEMTableID[8];
+	uint32_t OEMRevision;
+	uint32_t CreatorID;
+	uint32_t CreatorRevision;
+} __attribute__ ((packed)) SDT_header_t;
+
+void syscall_scuba_map(void *a, void *b, int c) {
+	(void)c;
+	scuba_map_func(process_get_dir(process_get_pid()), a, b, 2);
+}
+
+void syscall_scuba_unmap(void *a) {
+	scuba_unmap(process_get_dir(process_get_pid()), a);
+}
+
+#define LAPIC_BASE 0xFEE00000
+#define LAPIC_EOI      0x0B0
+#define LAPIC_SVR      0x0F0
+
+#define LAPIC_ICR_LOW  0x300
+#define LAPIC_ICR_HIGH 0x310
+
+volatile uint32_t *lapic = (uint32_t *)LAPIC_BASE;
+
+void lapic_write(uint32_t reg, uint32_t value) {
+	syscall_scuba_map((void *)lapic, (void *)lapic, 0);
+    lapic[reg / 4] = value;
+	syscall_scuba_unmap((void *)lapic);
+}
+
+RSDP_t *find_rsdp() {
+	char *start = (void *)0xe0000;
+	char *end = (void *)0xFFFFFF;
+
+	while (start < end) {
+		if (!mem_cmp(start, "RSD PTR ", 8))
+			break;
+		start++;
+	}
+
+	if (start == end)
+		return NULL;
+	RSDP_t *res = (void *)start;
+
+	uint8_t sum = 0;
+	for (size_t i = 0; i < 20; i++)
+		sum += start[i];
+	
+	if (sum != 0)
+		return NULL;
+	return res;
+}
+
+struct madt_entry {
+    uint8_t type;
+    uint8_t length;
+} __attribute__((packed));
+
+
+struct madt_lapic {
+    uint8_t type;
+    uint8_t length;
+    uint8_t acpi_cpu_id;
+    uint8_t apic_id;
+    uint32_t flags;
+} __attribute__((packed));
+
+static inline void io_wait(void) {
+    asm volatile ("outb %%al, $0x80" : : "a"(0));
+}
+
+static int8_t ap[]  = {
+  0xbb, 0x1e, 0x70, 0xba, 0xfd, 0x03, 0xec, 0x24, 0x20, 0x3c, 0x00, 0x74, 0xf6, 0xba, 0xf8, 0x03,
+  0x8a, 0x07, 0xee, 0x43, 0x80, 0x3f, 0x00, 0x74, 0x02, 0xeb, 0xe8, 0xf4, 0xeb, 0xfe, 0x73, 0x61,
+  0x6c, 0x75, 0x74, 0x20, 0x64, 0x65, 0x70, 0x75, 0x69, 0x73, 0x20, 0x6c, 0x65, 0x20, 0x63, 0x6f,
+  0x65, 0x75, 0x72, 0x31, 0x10, 0x00
+};
+
+void start_cpu(uint8_t apic_id) {
+	mem_copy((void *)0x7000, ap, sizeof(ap));
+
+    lapic_write(LAPIC_ICR_HIGH, ((uint32_t)apic_id) << 24);
+
+    lapic_write(LAPIC_ICR_LOW, 0x00004500);
+
+    io_wait();
+
+    lapic_write(LAPIC_ICR_LOW, 0x00000607);
+
+    io_wait();
+
+    lapic_write(LAPIC_ICR_LOW, 0x00000607);
+}
+
+void parse_madt(SDT_header_t *header)
+{
+    uint8_t *ptr = (uint8_t *)header;
+
+    uint32_t offset = sizeof(SDT_header_t) + 8;
+
+    while(offset < header->length)
+    {
+        struct madt_entry *entry =
+            (void *)(ptr + offset);
+
+        if(entry->type == 0)
+        {
+            struct madt_lapic *cpu =
+                (void *)entry;
+
+            if(cpu->flags & 1)
+            {
+                kprintf(
+                    "CPU ACPI=%d APIC=%d %x\n",
+                    cpu->acpi_cpu_id,
+                    cpu->apic_id,
+					cpu->flags
+                );
+				if (cpu->acpi_cpu_id == 1)
+					start_cpu(cpu->apic_id);
+            }
+        }
+
+        offset += entry->length;
+    }
+}
+
+void treat_entry(SDT_header_t *header) {
+	if (mem_cmp(header->signature, "APIC", 4))
+		return ;
+	kprintf("entry %c%c%c%c\n", header->signature[0], header->signature[1], header->signature[2], header->signature[3]);
+	parse_madt(header);
+}
+
+void foreach_entry(RSDP_t *rsdp, void (*func)(SDT_header_t *)) {
+	SDT_header_t *header = (void *)rsdp->rsdt_addr;
+	syscall_scuba_map(header, header, 0);
+
+	uint8_t sum = 0;
+	for (uint32_t i = 0; i < header->length; i++)
+		sum += ((uint8_t *)header)[i];
+
+	if (sum != 0) {
+		kprintf("Error: checksum invalide for rsdt header\n");
+		return ;
+	}
+
+	uint32_t entries_len = (header->length - sizeof(SDT_header_t)) / 4;
+	kprintf("found %d entries\n", entries_len);
+
+	for (uint32_t i = 0; i < entries_len; i++) {
+		uint32_t addr = ((uint32_t)&header[1]) + i * 4;
+
+		SDT_header_t *entry_header = (void *)*(uint32_t *)addr;
+		syscall_scuba_map(entry_header, entry_header, 0);
+		func(entry_header);
+		syscall_scuba_unmap(entry_header);
+	}
+	syscall_scuba_unmap(header);
+}
+
+static int test() {
+	RSDP_t *rsdp = find_rsdp();
+	if (!rsdp) {
+		kprintf("Error: couldn't find rsdp table in (0xe0000-0xfffff)\n");
+		return 1;
+	}
+	kprintf("found rsdp table at %p\n", rsdp);
+
+	if (rsdp->revision != 0) {
+		kprintf("Error: unsupported version rsdp table %d\n", rsdp->revision);
+		return 1;
+	}
+
+	foreach_entry(rsdp, treat_entry);
+	kprintf("\n");
+	return 0;
+}
