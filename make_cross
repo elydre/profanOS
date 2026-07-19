@@ -1,3 +1,3 @@
 #!/bin/sh
-export PATH="/home/asqel/git/profan2/bin_tools"':'"/home/asqel/.deno/bin:/home/asqel/.cargo/bin:/home/asqel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/asqel/.dotnet/tools:~/fake_root/bin/:~/fake_root/bin/aseprite:~/fake_root/bin/:~/fake_root/bin/aseprite"
+export PATH="/home/asqel/git/profan2/bin_tools/bin/"':'"/home/asqel/.deno/bin:/home/asqel/.cargo/bin:/home/asqel/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/asqel/.dotnet/tools:~/fake_root/bin/:~/fake_root/bin/aseprite:~/fake_root/bin/:~/fake_root/bin/aseprite"
 make $@
