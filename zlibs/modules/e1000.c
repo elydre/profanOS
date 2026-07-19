@@ -395,6 +395,19 @@ typedef struct {
 } __attribute__ ((packed)) RSDP_t;
 
 typedef struct {
+	char signature[8];
+	uint8_t checksum;
+	char OEMID[6];
+	uint8_t revision;
+	uint32_t rsdt_addr;
+	
+	uint32_t len;
+	uint64_t xsdt_addr;
+	uint8_t extend_checksum;
+	uint8_t reserved[3];
+} __attribute__ ((packed)) XSDP_t;
+
+typedef struct {
 	char signature[4];
 	uint32_t length;
 	uint8_t revision;
@@ -534,8 +547,7 @@ void treat_entry(SDT_header_t *header) {
 	parse_madt(header);
 }
 
-void foreach_entry(RSDP_t *rsdp, void (*func)(SDT_header_t *)) {
-	SDT_header_t *header = (void *)rsdp->rsdt_addr;
+void foreach_entry(SDT_header_t *header, void (*func)(SDT_header_t *)) {
 	syscall_scuba_map(header, header, 0);
 
 	uint8_t sum = 0;
@@ -569,12 +581,16 @@ static int test() {
 	}
 	kprintf("found rsdp table at %p\n", rsdp);
 
-	if (rsdp->revision != 0) {
-		kprintf("Error: unsupported version rsdp table %d\n", rsdp->revision);
+	if (rsdp->revision < 2) {
+		foreach_entry((void *)rsdp->rsdt_addr, treat_entry);
 		return 1;
 	}
+	else {
+		XSDP_t *xsdp = (void *)rsdp;
+		kprintf("xsdt %x%x\n", (uint32_t)(xsdp->xsdt_addr >> 32), (uint32_t)xsdp->xsdt_addr);
+		foreach_entry((void *)(uint32_t)xsdp->xsdt_addr, treat_entry);
+	}
 
-	foreach_entry(rsdp, treat_entry);
 	kprintf("\n");
 	return 0;
 }
