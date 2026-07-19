@@ -42,7 +42,7 @@ fi
 cat > make_cross << END
 #!/bin/sh
 export PATH="${PROFAN_TOOLS}"':'"${PATH}"
-make $@
+make '$@'
 END
 
 chmod +x make_cross
