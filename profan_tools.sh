@@ -41,7 +41,7 @@ fi
 
 cat > make_cross << END
 #!/bin/sh
-export PATH="${PROFAN_TOOLS}"':'"${PATH}"
+export PATH="${PROFAN_TOOLS}/bin/"':'"${PATH}"
 make \$@
 END
 
