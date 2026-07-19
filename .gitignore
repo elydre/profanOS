@@ -37,3 +37,4 @@ debug/
 *.hex
 *.out
 *.dat
+bin_tools/
