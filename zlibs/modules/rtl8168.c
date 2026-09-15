@@ -9,14 +9,15 @@
 |   === elydre : https://github.com/elydre/profanOS ===         #######  \\   |
 \*****************************************************************************/
 
-#include <modules/eth.h>
-#include <minilib.h>
-#include <cpu/timer.h>
-#include <drivers/pci.h>
 #include <kernel/snowflake.h>
+#include <modules/eth.h>
+#include <drivers/pci.h>
+#include <cpu/timer.h>
 #include <cpu/isr.h>
+#include <minilib.h>
 
-#define LOG(...) kprintf(__VA_ARGS__)
+#include <modules/filesys.h>
+#include <fcntl.h> // O_ flags
 
 /* Registers */
 #define RTL8169_REG_IDR0            0x00
@@ -165,7 +166,21 @@ typedef struct rtl8169 {
 } rtl8169_t;
 
 rtl8169_t *G_NIC = NULL;
+int g_log_fd;
 
+static void logf(const char *fmt, ...) {
+    if (g_log_fd < 0) {
+        return;
+    }
+
+    char buffer[512];
+    va_list args;
+    va_start(args, fmt);
+    kprintf_va2buf(buffer, fmt, args);
+    va_end(args);
+
+    fm_write(g_log_fd, buffer, str_len(buffer));
+}
 
 void outportb(unsigned short port, unsigned char data) {
     __asm__ __volatile__("outb %b[Data], %w[Port]" :: [Port] "Nd" (port), [Data] "a" (data));
@@ -244,11 +259,11 @@ void rtl8169_recv(void) {
 
         // Error ?
         if (desc->command & (1 << 21)) {
-            LOG("[ERR] Error in Rx descriptor\n");
+            logf("[ERR] Error in Rx descriptor\n");
             goto _next_desc;
         }
 
-        // LOG("[DEBUG] Received packet of length %d\n", pkt_length);
+        // logf("[DEBUG] Received packet of length %d\n", pkt_length);
 
         // Pass it on to the Ethernet handler
         eth_recv_packet((void*)(nic->rx_buffers + (nic->rx_current * RTL8169_RX_BUFFER_SIZE)), pkt_length);
@@ -272,24 +287,24 @@ void rtl8169_irq(registers_t *regs) {
         return; // Spurious interrupt, ignore
 
     if (isr & RTL8169_ISR_LINKCHG) { // Update link status
-        LOG("[INFO] Link status changed: %s\n", rtl8169_link(nic));
+        logf("[INFO] Link status changed: %s\n", rtl8169_link(nic));
     }
 
     // Check for errors
     if (isr & RTL8169_ISR_RER) {
-        LOG("[ERR] Error in received packet\n");
+        logf("[ERR] Error in received packet\n");
     }
 
     if (isr & RTL8169_ISR_TER) {
-        LOG("[ERR] Error in transmitted packet\n");
+        logf("[ERR] Error in transmitted packet\n");
     }
 
     if (isr & RTL8169_ISR_TOK) {
-        // LOG("[DEBUG] packet transmitted successfully\n");
+        // logf("[DEBUG] packet transmitted successfully\n");
     }
 
     if (isr & RTL8169_ISR_ROK) {
-        // LOG("[DEBUG] new packet received\n");
+        // logf("[DEBUG] new packet received\n");
         rtl8169_recv();
     }
 
@@ -307,12 +322,12 @@ int rtl8169_send(const void *buffer, uint16_t size) {
 
     // Is the descriptor busy?
     if (desc->command & RTL8169_DESC_CMD_OWN) {
-        LOG("[ERR] No free Tx descriptors available, cannot send packet\n");
+        logf("[ERR] No free Tx descriptors available, cannot send packet\n");
         return 1;
     }
 
     if (desc->buffer_lo != (nic->tx_buffers + (nic->tx_current * RTL8169_TX_BUFFER_SIZE))) {
-        LOG("[ERR] Tx descriptor buffer address mismatch, cannot send packet\n");
+        logf("[ERR] Tx descriptor buffer address mismatch, cannot send packet\n");
         return 1;
     }
 
@@ -332,7 +347,7 @@ int rtl8169_send(const void *buffer, uint16_t size) {
     // Inform NIC gracefully
     RTL8169_WRITE8(RTL8169_REG_TPPoll, RTL8169_TPPoll_NPQ);
 
-    // LOG("[DEBUG] Sent packet of length %d\n", size);
+    // logf("[DEBUG] Sent packet of length %d\n", size);
 
     return size;
 }
@@ -342,7 +357,7 @@ int rtl8169_initializeRx(rtl8169_t *nic) {
     nic->rx_buffers = (uint32_t) mem_alloc(RTL8169_RX_DESC_COUNT * RTL8169_RX_BUFFER_SIZE, 1, 0x1000);
     nic->rx_descriptors = (uint32_t) mem_alloc(RTL8169_RX_DESC_COUNT * sizeof(rtl8169_desc_t), 1, 0x1000);
 
-    LOG("[DEBUG] Rx buffers allocated to %p, descriptors allocated to %p\n", nic->rx_buffers, nic->rx_descriptors);
+    logf("[DEBUG] Rx buffers allocated to %p, descriptors allocated to %p\n", nic->rx_buffers, nic->rx_descriptors);
 
     // Start building each descriptor
     for (int i = 0; i < RTL8169_RX_DESC_COUNT; i++) {
@@ -384,7 +399,7 @@ int rtl8169_initializeTx(rtl8169_t *nic) {
     nic->tx_buffers = (uint32_t) mem_alloc(RTL8169_TX_DESC_COUNT * RTL8169_TX_BUFFER_SIZE, 1, 0x1000);
     nic->tx_descriptors = (uint32_t) mem_alloc(RTL8169_TX_DESC_COUNT * sizeof(rtl8169_desc_t), 1, 0x1000);
 
-    LOG("[DEBUG] Tx buffers allocated to %p, descriptors allocated to %p\n", nic->tx_buffers, nic->tx_descriptors);
+    logf("[DEBUG] Tx buffers allocated to %p, descriptors allocated to %p\n", nic->tx_buffers, nic->tx_descriptors);
 
     // Start building each descriptor
     for (int i = 0; i < RTL8169_TX_DESC_COUNT; i++) {
@@ -423,12 +438,12 @@ int rtl8169_reset(rtl8169_t *nic) {
     uint32_t debut = timer_get_ms();
     while (RTL8169_READ8(RTL8169_REG_CR) & RTL8169_CR_RST) {
         if (timer_get_ms() - debut > 1000) {
-            LOG("[ERR] Resetting the RTL8169 NIC failed due to timeout\n");
+            logf("[ERR] Resetting the RTL8169 NIC failed due to timeout\n");
             return 1;
         }
     }
 
-    LOG("[INFO] RTL8169 reset successfully\n");
+    logf("[INFO] RTL8169 reset successfully\n");
     return 0;
 }
 
@@ -442,23 +457,30 @@ pci_findme_t this_eth_ids[] = {
 };
 
 int __init(void) {
+    g_log_fd = 2;
+
     pci_device_t *device = pci_find_array(this_eth_ids, sizeof(this_eth_ids) / sizeof(pci_findme_t));
 
     if (device == NULL)
         return 2;
 
+    g_log_fd = fm_open("/sys/kernel/rtl8168.log", O_WRONLY | O_CREAT | O_TRUNC);
+
+    if (g_log_fd < 0)
+        return 1;
+
     if (sizeof(rtl8169_desc_t) != 16) {
-        LOG("[ERR] rtl8169_desc_t is not 16 bytes, cannot continue\n");
+        logf("[ERR] rtl8169_desc_t is not 16 bytes, cannot continue\n");
         return 1;
     }
 
-    LOG("[DEBUG] A Initializing a RTL8169 NIC (bus %d slot %d func %d)\n", device->bus, device->slot, device->function);
+    logf("[DEBUG] A Initializing a RTL8169 NIC (bus %d slot %d func %d)\n", device->bus, device->slot, device->function);
 
     // Get BAR
     uint32_t bar = device->bar[0];
 
     if (device->bar_is_mem[0]) {
-        LOG("[ERR] only I/O BARs are supported for RTL8169\n\n");
+        logf("[ERR] only I/O BARs are supported for RTL8169\n\n");
         return 1;
     }
 
@@ -468,11 +490,11 @@ int __init(void) {
 
     nic->base = bar & 0xFFFFFFF0;
 
-    LOG("[DEBUG] I/O base address: %x\n", nic->base);
+    logf("[DEBUG] I/O base address: %x\n", nic->base);
 
     // Reset the NIC
     if (rtl8169_reset(nic)) {
-        LOG("[ERR] Error while initializing RTL8169\n");
+        logf("[ERR] Error while initializing RTL8169\n");
         free(nic);
         return 1;
     }
@@ -480,37 +502,37 @@ int __init(void) {
     // Get the MAC address of the NIC
     uint8_t mac[6];
     if (rtl8169_readMAC(nic, mac)) {
-        LOG("[ERR] Error while initializing RTL8169\n");
+        logf("[ERR] Error while initializing RTL8169\n");
         free(nic);
         return 1;
     }
 
-    LOG("[DEBUG] MAC: %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    logf("[DEBUG] MAC: %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     // Register IRQ handler
     int irq = pci_enable_msi(device);
     if (irq < 0) {
-        LOG("[ERR] Failed to enable MSI for RTL8169\n");
+        logf("[ERR] Failed to enable MSI for RTL8169\n");
         return 1;
     }
 
     interrupt_register_handler(irq, rtl8169_irq);
 
-    LOG("[DEBUG] Registered IRQ%d for NIC\n", irq);
+    logf("[DEBUG] Registered IRQ%d for NIC\n", irq);
 
     // Enable configuration registers
     RTL8169_WRITE8(RTL8169_REG_9346CR, RTL8169_9346CR_MODE_CONFIG);
 
     // Initialize Rx
     if (rtl8169_initializeRx(nic)) {
-        LOG("[ERR] Error while initializing RTL8169\n");
+        logf("[ERR] Error while initializing RTL8169\n");
         free(nic);
         return 1;
     }
 
     // Initialize Tx
     if (rtl8169_initializeTx(nic)) {
-        LOG("[ERR] Error while initializing RTL8169\n");
+        logf("[ERR] Error while initializing RTL8169\n");
         free(nic);
         return 1;
     }
@@ -527,7 +549,7 @@ int __init(void) {
                 RTL8169_IMR_LINKCHG | RTL8169_IMR_FOVW | RTL8169_IMR_TDU); */
 
     // Update link status
-    LOG("[INFO] Link status: %s\n", rtl8169_link(nic));
+    logf("[INFO] Link status: %s\n", rtl8169_link(nic));
 
     eth_register_nic(rtl8169_send, mac);
 
